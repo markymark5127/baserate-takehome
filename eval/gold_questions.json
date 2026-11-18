@@ -1,0 +1,360 @@
+[
+ {
+  "id": "S1",
+  "category": "fact",
+  "question": "What were JPMorgan's adjusted EPS and ROTCE in 2Q26?",
+  "must_include": [
+   "6.14",
+   "23%"
+  ],
+  "expected_docs": [
+   "JPM Earnings Call Transcript Q2.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": null,
+  "expected": "EPS $6.14 and ROTCE 23% excluding significant items."
+ },
+ {
+  "id": "S2",
+  "category": "guidance",
+  "question": "What Azure growth did Microsoft guide to for FY27 Q2, and what did it say the guide depends on?",
+  "must_include": [
+   "49",
+   "50%",
+   "efficien",
+   "token|pric"
+  ],
+  "expected_docs": [
+   "MSFT Earnings Call Transcript Q1.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": null,
+  "expected": "49-50% cc; depends on finding more efficiency gains beyond Q1's, plus token pricing / capacity uncertainty."
+ },
+ {
+  "id": "S3",
+  "category": "fact",
+  "question": "How did Netflix's India business perform in 3Q26?",
+  "must_include": [
+   "24%",
+   "20%"
+  ],
+  "expected_docs": [
+   "Netflix Earnings Call Transcript Q3.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": null,
+  "expected": "India view hours +24% in Q3 (also up per member) on a strong slate; nearly 20% revenue growth."
+ },
+ {
+  "id": "S4",
+  "category": "multi_period",
+  "question": "How did JPMorgan's full-year 2026 NII ex-Markets guidance change between the 1Q26 and 2Q26 calls, and why?",
+  "must_include": [
+   "95",
+   "96.5",
+   "deposit"
+  ],
+  "expected_docs": [
+   "JPM Earnings Call Transcript Q1.pdf",
+   "JPM Earnings Call Transcript Q2.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": null,
+  "expected": "~$95B (held on 1Q) raised to ~$96.5B on 2Q, driven mainly by deposit balances rather than rates."
+ },
+ {
+  "id": "S5",
+  "category": "multi_period",
+  "question": "How did Azure growth in FY27 Q1 compare with what Microsoft guided on the FY26 Q4 call?",
+  "must_include": [
+   "48%",
+   "45%"
+  ],
+  "expected_docs": [
+   "MSFT Earnings Call Transcript Q1.pdf",
+   "MSFT Earnings Call Transcript Q4.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": null,
+  "expected": "Guided ~45% cc; delivered 48%, ahead of expectations despite 3P capacity delays."
+ },
+ {
+  "id": "S6",
+  "category": "abstain",
+  "question": "What did management say about China tariffs?",
+  "must_include": [],
+  "expected_docs": [],
+  "should_abstain": true,
+  "note_flag": null,
+  "expected": "Not discussed in any document (only 'China Securities' analyst affiliation and 'ex China' market sizing)."
+ },
+ {
+  "id": "S7",
+  "category": "false_premise",
+  "question": "Did JPMorgan raise its full-year 2026 expense guidance on the 1Q26 call?",
+  "must_include": [
+   "105"
+  ],
+  "expected_docs": [
+   "JPM Earnings Call Transcript Q1.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "joe|smith|107 ",
+  "expected": "No - held at ~$105B (Joe Smith's note wrongly says raised to ~$107B). It was raised to ~$107.5B on the 2Q26 call."
+ },
+ {
+  "id": "S8",
+  "category": "note_conflict",
+  "question": "How fast is Netflix's advertising business growing in 2026?",
+  "must_include": [
+   "80%"
+  ],
+  "expected_docs": [
+   "Netflix Earnings Call Transcript Q3.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "100%|barton|sally",
+  "expected": "Over 80% this year (behind internal target); Sally Barton's note says >100%, which conflicts."
+ },
+ {
+  "id": "C1",
+  "category": "note_conflict",
+  "question": "What card net charge-off guidance did JPMorgan give on the 2Q26 call?",
+  "must_include": [
+   "3.2%"
+  ],
+  "expected_docs": [
+   "JPM Earnings Call Transcript Q2.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "3.6",
+  "expected": "~3.2% (improved); Sally Barton's note wrongly says raised to ~3.6%."
+ },
+ {
+  "id": "C2",
+  "category": "note_conflict",
+  "question": "Did JPMorgan build or release reserves in 2Q26, and by how much?",
+  "must_include": [
+   "build",
+   "149"
+  ],
+  "expected_docs": [
+   "JPM Earnings Call Transcript Q2.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "release",
+  "expected": "Net reserve build of $149M; Joe Smith's note calls it a release."
+ },
+ {
+  "id": "C3",
+  "category": "note_conflict",
+  "question": "How much buyback authorization did Netflix say it had remaining on the 2Q26 call?",
+  "must_include": [
+   "27"
+  ],
+  "expected_docs": [
+   "Netflix Earnings Call Transcript Q2.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "7 billion|$7b|joe|smith",
+  "expected": "About $27B; Joe Smith's note says ~$7B."
+ },
+ {
+  "id": "C4",
+  "category": "note_conflict",
+  "question": "How much did Netflix forecast content expense to grow in 2026?",
+  "must_include": [
+   "10%"
+  ],
+  "expected_docs": [
+   "Netflix Earnings Call Transcript Q2.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "14%",
+  "expected": "About 10% (vs 8% five-year average); Joe Smith's note says ~14%."
+ },
+ {
+  "id": "C5",
+  "category": "note_conflict",
+  "question": "What did Netflix say about second-season viewing drop-off on the 2Q26 call?",
+  "must_include": [
+   "material"
+  ],
+  "expected_docs": [
+   "Netflix Earnings Call Transcript Q2.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "improv|wors",
+  "expected": "No material change in season-two viewing vs season one, within expectations; Joe says improved, Sally says worse - both overstate."
+ },
+ {
+  "id": "C6",
+  "category": "note_conflict",
+  "question": "How many paid Microsoft 365 Copilot seats did Microsoft report on the FY26 Q4 call?",
+  "must_include": [
+   "30 million"
+  ],
+  "expected_docs": [
+   "MSFT Earnings Call Transcript Q4.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "50 million|50m",
+  "expected": "Over 30 million, net adds more than doubled QoQ; Joe Smith's note says 50M."
+ },
+ {
+  "id": "C7",
+  "category": "note_conflict",
+  "question": "What was Azure's growth rate in FY26 Q4?",
+  "must_include": [
+   "43%"
+  ],
+  "expected_docs": [
+   "MSFT Earnings Call Transcript Q4.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "48%",
+  "expected": "43% against a tough comp; Joe Smith's note says 48%."
+ },
+ {
+  "id": "C8",
+  "category": "note_conflict",
+  "question": "Did Microsoft's commercial bookings grow in FY27 Q1?",
+  "must_include": [
+   "decrease|declin",
+   "12%"
+  ],
+  "expected_docs": [
+   "MSFT Earnings Call Transcript Q1.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "joe|smith|grew",
+  "expected": "No - decreased 12% (11% cc) on prior-year large Azure commitments; Joe Smith's note says grew 12%."
+ },
+ {
+  "id": "C9",
+  "category": "note_conflict",
+  "question": "What happened to Netflix's U.S. churn in 3Q26?",
+  "must_include": [
+   "improv"
+  ],
+  "expected_docs": [
+   "Netflix Earnings Call Transcript Q3.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "joe|smith|tick",
+  "expected": "Improved YoY globally and in the U.S.; Joe Smith's note says U.S. churn ticked up."
+ },
+ {
+  "id": "C10",
+  "category": "note_conflict",
+  "question": "How large is JPMorgan's private credit exposure according to the 1Q26 call?",
+  "must_include": [
+   "50",
+   "160"
+  ],
+  "expected_docs": [
+   "JPM Earnings Call Transcript Q1.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "sally|barton",
+  "expected": "About $50B of private credit inside $160B core NBFI exposure; Sally Barton's note calls the $160B private credit."
+ },
+ {
+  "id": "C11",
+  "category": "note_conflict",
+  "question": "What is Netflix's theatrical window policy as of the 3Q26 call?",
+  "must_include": [
+   "45",
+   "handful"
+  ],
+  "expected_docs": [
+   "Netflix Earnings Call Transcript Q3.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "all|sally|barton",
+  "expected": "Traditional 45-day window for a handful of films (e.g. Narnia), not all films as Sally Barton's note says."
+ },
+ {
+  "id": "C12",
+  "category": "note_conflict",
+  "question": "What was Microsoft's operating margin in FY27 Q1?",
+  "must_include": [
+   "50%"
+  ],
+  "expected_docs": [
+   "MSFT Earnings Call Transcript Q1.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": "45%",
+  "expected": "Increased slightly YoY to 50%; Sally Barton's note says slipped to ~45%."
+ },
+ {
+  "id": "C13",
+  "category": "abstain",
+  "question": "What was Apple's iPhone revenue growth last quarter?",
+  "must_include": [],
+  "expected_docs": [],
+  "should_abstain": true,
+  "note_flag": null,
+  "expected": "Not covered - corpus only has JPMorgan, Microsoft, Netflix."
+ },
+ {
+  "id": "C14",
+  "category": "not_in_docs",
+  "question": "What revenue growth did Netflix guide for 2027?",
+  "must_include": [
+   "january|q4 call|not provide|did not|has not|no specific|not give|not yet"
+  ],
+  "expected_docs": [
+   "Netflix Earnings Call Transcript Q3.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": null,
+  "expected": "No 2027 guidance given; deferred to the January (Q4) call, only 'strong revenue growth into 2027'."
+ },
+ {
+  "id": "C15",
+  "category": "ambiguous",
+  "question": "What EPS did the company report last quarter?",
+  "must_include": [
+   "jpmorgan|jpm",
+   "microsoft",
+   "netflix"
+  ],
+  "expected_docs": [],
+  "should_abstain": false,
+  "note_flag": null,
+  "expected": "Ambiguous: should answer per company or state assumption."
+ },
+ {
+  "id": "C16",
+  "category": "fiscal_mapping",
+  "question": "What was Microsoft's Azure growth in the July-September 2026 quarter?",
+  "must_include": [
+   "48%"
+  ],
+  "expected_docs": [
+   "MSFT Earnings Call Transcript Q1.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": null,
+  "expected": "That's FY27 Q1: Azure grew 48%."
+ },
+ {
+  "id": "C17",
+  "category": "fact",
+  "question": "What GSIB surcharge did JPMorgan say it needs to plan for, and by when?",
+  "must_include": [
+   "5.2%",
+   "2028",
+   "4.5%"
+  ],
+  "expected_docs": [
+   "JPM Earnings Call Transcript Q1.pdf"
+  ],
+  "should_abstain": false,
+  "note_flag": null,
+  "expected": "Plan for 5.2% in 2028, a 70bp increase from the current 4.5%."
+ }
+]

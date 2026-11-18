@@ -1,0 +1,7 @@
+claude-agent-sdk>=0.2.183
+pypdf>=5.0
+rank-bm25>=0.2.2
+fastembed>=0.4
+numpy
+rapidfuzz>=3.0
+python-dotenv>=1.0

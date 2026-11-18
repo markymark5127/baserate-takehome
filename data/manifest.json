@@ -1,0 +1,164 @@
+[
+ {
+  "file": "JPM Earnings Call Transcript Q1.pdf",
+  "company": "JPMorgan",
+  "period": "1Q26",
+  "doc_type": "transcript",
+  "date": "2026-04-14",
+  "author": null,
+  "calendar_quarter": "Jan-Mar 2026"
+ },
+ {
+  "file": "JPM Earnings Call Transcript Q2.pdf",
+  "company": "JPMorgan",
+  "period": "2Q26",
+  "doc_type": "transcript",
+  "date": "2026-07-14",
+  "author": null,
+  "calendar_quarter": "Apr-Jun 2026"
+ },
+ {
+  "file": "MSFT Earnings Call Transcript Q4.pdf",
+  "company": "Microsoft",
+  "period": "FY26 Q4",
+  "doc_type": "transcript",
+  "date": "2026-07-29",
+  "author": null,
+  "calendar_quarter": "Apr-Jun 2026"
+ },
+ {
+  "file": "MSFT Earnings Call Transcript Q1.pdf",
+  "company": "Microsoft",
+  "period": "FY27 Q1",
+  "doc_type": "transcript",
+  "date": "2026-10-28",
+  "author": null,
+  "calendar_quarter": "Jul-Sep 2026"
+ },
+ {
+  "file": "Netflix Earnings Call Transcript Q2.pdf",
+  "company": "Netflix",
+  "period": "2Q26",
+  "doc_type": "transcript",
+  "date": "2026-07-16",
+  "author": null,
+  "calendar_quarter": "Apr-Jun 2026"
+ },
+ {
+  "file": "Netflix Earnings Call Transcript Q3.pdf",
+  "company": "Netflix",
+  "period": "3Q26",
+  "doc_type": "transcript",
+  "date": "2026-10-20",
+  "author": null,
+  "calendar_quarter": "Jul-Sep 2026"
+ },
+ {
+  "file": "JP Morgan Earnings Results Notes - 1Q26 - Joe Smith.pdf",
+  "company": "JPMorgan",
+  "period": "1Q26",
+  "doc_type": "analyst_note",
+  "date": "2026-04-14",
+  "author": "Joe Smith",
+  "calendar_quarter": "Jan-Mar 2026"
+ },
+ {
+  "file": "JP Morgan Earnings Results Notes - 2Q26 - Joe Smith.pdf",
+  "company": "JPMorgan",
+  "period": "2Q26",
+  "doc_type": "analyst_note",
+  "date": "2026-07-14",
+  "author": "Joe Smith",
+  "calendar_quarter": "Apr-Jun 2026"
+ },
+ {
+  "file": "Microsoft Earnings - FY26 Q4 - Joe Smith.pdf",
+  "company": "Microsoft",
+  "period": "FY26 Q4",
+  "doc_type": "analyst_note",
+  "date": "2026-07-29",
+  "author": "Joe Smith",
+  "calendar_quarter": "Apr-Jun 2026"
+ },
+ {
+  "file": "Microsoft Earnings - FY27 Q1 - Joe Smith.pdf",
+  "company": "Microsoft",
+  "period": "FY27 Q1",
+  "doc_type": "analyst_note",
+  "date": "2026-10-28",
+  "author": "Joe Smith",
+  "calendar_quarter": "Jul-Sep 2026"
+ },
+ {
+  "file": "Netflix Earnings Results Notes - 2Q26 - Joe Smith.pdf",
+  "company": "Netflix",
+  "period": "2Q26",
+  "doc_type": "analyst_note",
+  "date": "2026-07-16",
+  "author": "Joe Smith",
+  "calendar_quarter": "Apr-Jun 2026"
+ },
+ {
+  "file": "Netflix Earnings Results Notes - 3Q26 - Joe Smith.pdf",
+  "company": "Netflix",
+  "period": "3Q26",
+  "doc_type": "analyst_note",
+  "date": "2026-10-20",
+  "author": "Joe Smith",
+  "calendar_quarter": "Jul-Sep 2026"
+ },
+ {
+  "file": "JP Morgan Earnings Results Notes - 1Q26 - Sally Barton.pdf",
+  "company": "JPMorgan",
+  "period": "1Q26",
+  "doc_type": "analyst_note",
+  "date": "2026-04-14",
+  "author": "Sally Barton",
+  "calendar_quarter": "Jan-Mar 2026"
+ },
+ {
+  "file": "JP Morgan Earnings Results Notes - 2Q26 - Sally Barton.pdf",
+  "company": "JPMorgan",
+  "period": "2Q26",
+  "doc_type": "analyst_note",
+  "date": "2026-07-14",
+  "author": "Sally Barton",
+  "calendar_quarter": "Apr-Jun 2026"
+ },
+ {
+  "file": "Microsoft Earnings - FY26 Q4 - Sally Barton.pdf",
+  "company": "Microsoft",
+  "period": "FY26 Q4",
+  "doc_type": "analyst_note",
+  "date": "2026-07-29",
+  "author": "Sally Barton",
+  "calendar_quarter": "Apr-Jun 2026"
+ },
+ {
+  "file": "Microsoft Earnings - FY27 Q1 - Sally Barton.pdf",
+  "company": "Microsoft",
+  "period": "FY27 Q1",
+  "doc_type": "analyst_note",
+  "date": "2026-10-28",
+  "author": "Sally Barton",
+  "calendar_quarter": "Jul-Sep 2026"
+ },
+ {
+  "file": "Netflix Earnings Results Notes - 2Q26 - Sally Barton.pdf",
+  "company": "Netflix",
+  "period": "2Q26",
+  "doc_type": "analyst_note",
+  "date": "2026-07-16",
+  "author": "Sally Barton",
+  "calendar_quarter": "Apr-Jun 2026"
+ },
+ {
+  "file": "Netflix Earnings Results Notes - 3Q26 - Sally Barton.pdf",
+  "company": "Netflix",
+  "period": "3Q26",
+  "doc_type": "analyst_note",
+  "date": "2026-10-20",
+  "author": "Sally Barton",
+  "calendar_quarter": "Jul-Sep 2026"
+ }
+]

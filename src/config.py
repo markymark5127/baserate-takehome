@@ -1,0 +1,21 @@
+"""Central configuration. Everything model/credential related comes from env (or .env)."""
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(ROOT / ".env")
+
+RAW_DIR = ROOT / "data" / "raw"
+PROCESSED_DIR = ROOT / "data" / "processed"
+MANIFEST = ROOT / "data" / "manifest.json"
+
+MODEL = os.getenv("MODEL", "claude-sonnet-5-5")
+TOP_K = int(os.getenv("TOP_K", "8"))
+MAX_TURNS = int(os.getenv("MAX_TURNS", "12"))
+EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
+# Token is read by the bundled Claude Code CLI from the environment; we only pass it through.
+OAUTH_TOKEN = os.getenv("CLAUDE_CODE_OAUTH_TOKEN") or None
+if OAUTH_TOKEN == "your-token-here":
+    OAUTH_TOKEN = None

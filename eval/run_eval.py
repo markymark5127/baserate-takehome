@@ -41,7 +41,9 @@ def has(text, alt):
 
 def ungrounded_numbers(ans, citations):
     body = norm(" ".join(c["passage"] for c in citations))
-    nums = {n.replace(",", "") for n in NUM_PAT.findall(re.sub(r"\[\d+(?:,\s*\d+)*\]", "", ans))}
+    ans = re.sub(r"\[\d+(?:,\s*\d+)*\]", "", ans)  # citation markers
+    ans = re.sub(r"(?i)\b(FY\s?\d{2}|[1-4]Q\d{2}|Q[1-4](\s?FY\d{2})?|H[12])\b", "", ans)  # period labels
+    nums = {n.replace(",", "") for n in NUM_PAT.findall(ans)}
     # ignore tiny integers (counts, list numbering) and period labels like 2026 / 26 / Q2
     nums = {n for n in nums if not (n.isdigit() and (int(n) < 10 or 2020 <= int(n) <= 2030))}
     return sorted(n for n in nums if n not in body)

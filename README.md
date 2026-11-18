@@ -28,7 +28,7 @@ Configuration lives in environment variables, or in `.env`, which is git-ignored
 
 | variable | default | purpose |
 |---|---|---|
-| `CLAUDE_CODE_OAUTH_TOKEN` | *(placeholder)* | your credential from `claude setup-token`. It is passed through to the bundled CLI. |
+| `CLAUDE_CODE_OAUTH_TOKEN` | *(placeholder)* | your credential from `claude setup-token`. It is passed through to the bundled CLI. While the placeholder is left as-is, the CLI falls back to any existing `claude` login on the machine. An invalid token fails with a clear `401` message. |
 | `MODEL` | `claude-sonnet-5-5` | any Claude model id |
 | `TOP_K` | `8` | passages returned per search call |
 | `MAX_TURNS` | `12` | maximum number of agent turns per question |

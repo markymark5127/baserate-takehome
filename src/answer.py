@@ -34,14 +34,23 @@ def _options():
         output_format={"type": "json_schema", "schema": OUTPUT_SCHEMA},
         env=env,
         cwd=str(config.ROOT),
+        stderr=_STDERR.append,         # keep CLI errors so auth/config problems are reported clearly
     )
+
+
+_STDERR: list[str] = []
 
 
 async def _run_agent(question):
     result = None
-    async for msg in query(prompt=question, options=_options()):
-        if isinstance(msg, ResultMessage):
-            result = msg
+    try:
+        async for msg in query(prompt=question, options=_options()):
+            if isinstance(msg, ResultMessage):
+                result = msg
+    except Exception as e:
+        tail = "".join(_STDERR[-20:]).strip()
+        hint = "" if config.OAUTH_TOKEN else " (no CLAUDE_CODE_OAUTH_TOKEN set: put one in .env, see README)"
+        raise RuntimeError(f"Claude Agent SDK call failed{hint}: {e}\n{tail}") from e
     if result is None:
         raise RuntimeError("agent returned no result")
     out = result.structured_output

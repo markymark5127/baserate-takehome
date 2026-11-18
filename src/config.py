@@ -18,4 +18,6 @@ EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 # Token is read by the bundled Claude Code CLI from the environment; we only pass it through.
 OAUTH_TOKEN = os.getenv("CLAUDE_CODE_OAUTH_TOKEN") or None
 if OAUTH_TOKEN == "your-token-here":
+    # untouched placeholder: don't let the CLI try it; fall back to an existing `claude` login if any
     OAUTH_TOKEN = None
+    os.environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)

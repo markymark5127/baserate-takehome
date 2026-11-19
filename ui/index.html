@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Earnings Desk</title>
+<style>
+:root{
+  --bg:#eef1f8; --ink:#0b1020; --ink-2:rgba(11,16,32,.62); --ink-3:rgba(11,16,32,.42);
+  --glass:rgba(255,255,255,.42); --glass-strong:rgba(255,255,255,.62); --stroke:rgba(255,255,255,.75);
+  --edge:rgba(11,16,32,.08); --shadow:0 10px 40px -12px rgba(30,40,90,.28), 0 2px 6px rgba(30,40,90,.06);
+  --accent:#2f6bff; --accent-2:#8a5cff; --user-a:#3d7bff; --user-b:#7a5cff;
+  --note:#c2410c; --note-bg:rgba(251,146,60,.16); --tx:#0f766e; --tx-bg:rgba(45,212,191,.16);
+  --blob1:#7aa7ff; --blob2:#c59bff; --blob3:#7fe3d0; --blob4:#ffb3c7;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#070912; --ink:#f3f5fb; --ink-2:rgba(243,245,251,.66); --ink-3:rgba(243,245,251,.42);
+    --glass:rgba(28,32,48,.42); --glass-strong:rgba(36,40,60,.62); --stroke:rgba(255,255,255,.14);
+    --edge:rgba(255,255,255,.06); --shadow:0 14px 50px -14px rgba(0,0,0,.7), 0 2px 8px rgba(0,0,0,.3);
+    --note:#fdba74; --note-bg:rgba(251,146,60,.14); --tx:#5eead4; --tx-bg:rgba(45,212,191,.12);
+    --blob1:#2747a8; --blob2:#5a2ea6; --blob3:#0f6b62; --blob4:#7a2448;
+  }
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Roboto,system-ui,sans-serif;
+  color:var(--ink); background:var(--bg); -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+/* ---------- living background ---------- */
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.blob{position:absolute;width:52vmax;height:52vmax;border-radius:50%;filter:blur(70px);opacity:.75;mix-blend-mode:normal;animation:drift 26s ease-in-out infinite alternate}
+.b1{background:var(--blob1);top:-18vmax;left:-12vmax}
+.b2{background:var(--blob2);top:-10vmax;right:-18vmax;animation-delay:-6s;animation-duration:31s}
+.b3{background:var(--blob3);bottom:-22vmax;left:10vmax;animation-delay:-12s;animation-duration:34s}
+.b4{background:var(--blob4);bottom:-20vmax;right:-8vmax;animation-delay:-3s;animation-duration:29s;opacity:.55}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(6vmax,4vmax) scale(1.08)}100%{transform:translate(-4vmax,7vmax) scale(.95)}}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* ---------- glass primitive ---------- */
+.glass{
+  background:var(--glass);
+  backdrop-filter:blur(28px) saturate(180%); -webkit-backdrop-filter:blur(28px) saturate(180%);
+  border:1px solid var(--stroke);
+  box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 var(--edge);
+  position:relative;
+}
+.glass::before{ /* specular sheen */
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,.38),rgba(255,255,255,0) 38%,rgba(255,255,255,0) 70%,rgba(255,255,255,.12));
+  mix-blend-mode:soft-light;
+}
+/* ---------- layout ---------- */
+.app{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center}
+header{
+  margin:14px 16px 0;padding:10px 12px 10px 16px;border-radius:999px;width:min(820px,calc(100% - 32px));
+  display:flex;align-items:center;gap:12px;
+}
+.logo{width:30px;height:30px;border-radius:10px;flex:none;display:grid;place-items:center;
+  background:linear-gradient(140deg,var(--accent),var(--accent-2));box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 4px 14px -4px var(--accent)}
+.logo svg{width:17px;height:17px}
+.title{font-weight:650;letter-spacing:-.01em}
+.sub{font-size:12.5px;color:var(--ink-2)}
+.grow{flex:1}
+.pill{font-size:12px;color:var(--ink-2);padding:6px 11px;border-radius:999px;background:var(--glass-strong);border:1px solid var(--stroke);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.18)}
+.iconbtn{border:0;background:transparent;color:var(--ink-2);cursor:pointer;border-radius:999px;padding:7px;display:grid;place-items:center}
+.iconbtn:hover{background:var(--glass-strong);color:var(--ink)}
+
+main{flex:1;width:100%;overflow-y:auto;scroll-behavior:smooth;padding:18px 16px 150px}
+.thread{width:min(820px,100%);margin:0 auto;display:flex;flex-direction:column;gap:18px}
+
+/* empty state */
+.hero{margin:9vh auto 0;text-align:center;max-width:620px;animation:rise .6s cubic-bezier(.2,.8,.2,1)}
+.hero h1{font-size:clamp(30px,5vw,44px);line-height:1.08;letter-spacing:-.035em;margin:0 0 10px;font-weight:700}
+.hero h1 span{background:linear-gradient(100deg,var(--accent),var(--accent-2) 60%,#d65cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--ink-2);margin:0 auto 26px;max-width:500px}
+.suggest{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;text-align:left}
+.chip{border-radius:20px;padding:13px 15px;cursor:pointer;font:inherit;color:var(--ink);font-size:14px;line-height:1.4;transition:transform .2s,background .2s}
+.chip:hover{transform:translateY(-2px);background:var(--glass-strong)}
+.chip small{display:block;color:var(--ink-3);font-size:11.5px;margin-bottom:3px;font-weight:600;letter-spacing:.02em;text-transform:uppercase}
+
+/* messages */
+.msg{display:flex;animation:rise .45s cubic-bezier(.2,.8,.2,1)}
+.msg.user{justify-content:flex-end}
+.bubble-user{
+  max-width:78%;padding:11px 16px;border-radius:22px 22px 6px 22px;color:#fff;
+  background:linear-gradient(135deg,var(--user-a),var(--user-b));
+  box-shadow:0 10px 30px -12px var(--user-a), inset 0 1px 0 rgba(255,255,255,.35);
+  white-space:pre-wrap;word-wrap:break-word
+}
+.bubble-ai{width:100%;border-radius:26px 26px 26px 8px;padding:18px 20px 14px}
+.answer p{margin:0 0 10px}.answer p:last-child{margin-bottom:0}
+.answer ul{margin:4px 0 10px;padding-left:20px}.answer li{margin:3px 0}
+.answer strong{font-weight:650}
+.ref{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 5px;margin:0 1px;
+  border-radius:7px;font-size:11px;font-weight:650;vertical-align:1px;cursor:pointer;border:0;
+  color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);transition:all .15s}
+.ref:hover{background:var(--accent);color:#fff}
+.insufficient{display:inline-flex;gap:6px;align-items:center;font-size:12px;font-weight:600;color:#b45309;background:rgba(245,158,11,.15);padding:4px 10px;border-radius:999px;margin-bottom:10px}
+
+.cites{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.cites-h{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-3);font-weight:600;letter-spacing:.03em;text-transform:uppercase;margin-top:4px}
+.cites-h::after{content:"";flex:1;height:1px;background:var(--edge)}
+.cite{border-radius:16px;padding:10px 13px;background:var(--glass-strong);border:1px solid var(--stroke);cursor:pointer;transition:box-shadow .25s,transform .25s}
+.cite:hover{transform:translateY(-1px)}
+.cite.flash{box-shadow:0 0 0 2px var(--accent),0 10px 30px -10px var(--accent)}
+.cite-top{display:flex;align-items:center;gap:8px;font-size:12.5px;min-width:0}
+.num{flex:none;width:20px;height:20px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+.doc{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tag{flex:none;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;letter-spacing:.02em}
+.tag.tx{color:var(--tx);background:var(--tx-bg)}.tag.note{color:var(--note);background:var(--note-bg)}
+.passage{margin:7px 0 0 28px;font-size:13.5px;color:var(--ink-2);line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cite.open .passage{-webkit-line-clamp:unset}
+.passage::before{content:"“"}.passage::after{content:"”"}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.meta span{font-size:11.5px;color:var(--ink-3);padding:3px 9px;border-radius:999px;border:1px solid var(--edge)}
+.meta .ok{color:#15803d;border-color:rgba(34,197,94,.3)}
+
+/* thinking */
+.thinking{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:22px 22px 22px 8px;width:fit-content}
+.orb{width:22px;height:22px;border-radius:50%;background:conic-gradient(from 0deg,var(--accent),var(--accent-2),#d65cff,var(--blob3),var(--accent));animation:spin 1.4s linear infinite;
+  mask:radial-gradient(circle,transparent 5px,#000 6px);-webkit-mask:radial-gradient(circle,transparent 5px,#000 6px)}
+.shimmer{font-size:14px;background:linear-gradient(90deg,var(--ink-3) 0%,var(--ink) 50%,var(--ink-3) 100%);background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 2.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+@keyframes rise{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+.error{color:#dc2626;font-size:14px}
+
+/* composer */
+.composer-wrap{position:fixed;left:0;right:0;bottom:0;z-index:3;padding:0 16px max(16px,env(safe-area-inset-bottom));display:flex;justify-content:center;
+  background:linear-gradient(to top,var(--bg) 10%,transparent);pointer-events:none}
+.composer{pointer-events:auto;width:min(820px,100%);border-radius:30px;padding:8px 8px 8px 20px;display:flex;align-items:flex-end;gap:8px}
+textarea{flex:1;resize:none;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:15.5px;line-height:1.45;padding:10px 0;max-height:160px}
+textarea::placeholder{color:var(--ink-3)}
+.send{flex:none;width:42px;height:42px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(140deg,var(--accent),var(--accent-2));box-shadow:0 8px 22px -8px var(--accent),inset 0 1px 0 rgba(255,255,255,.45);transition:transform .15s,opacity .15s}
+.send:hover{transform:scale(1.06)}.send:disabled{opacity:.35;cursor:default;transform:none}
+.hint{position:fixed;bottom:4px;left:0;right:0;text-align:center;font-size:11px;color:var(--ink-3);z-index:3;pointer-events:none}
+
+@media (max-width:640px){
+  .suggest{grid-template-columns:1fr}.sub,.pill .lbl{display:none}
+  .bubble-user{max-width:88%}.bubble-ai{padding:15px 15px 12px}.passage{margin-left:0}
+  .hero{margin-top:4vh}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="bg"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div></div>
+<div class="grain"></div>
+
+<div class="app">
+  <header class="glass">
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></div>
+    <div><div class="title">Earnings Desk</div><div class="sub">JPMorgan · Microsoft · Netflix — transcripts &amp; analyst notes</div></div>
+    <div class="grow"></div>
+    <div class="pill"><span class="dot"></span><span class="lbl">Grounded answers only</span></div>
+    <button class="iconbtn" id="reset" title="New chat" aria-label="New chat">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </header>
+
+  <main id="scroller"><div class="thread" id="thread"></div></main>
+</div>
+
+<div class="composer-wrap">
+  <form class="composer glass" id="form">
+    <textarea id="q" rows="1" placeholder="Ask about the calls or the analyst notes…" autofocus></textarea>
+    <button class="send" id="send" type="submit" aria-label="Send" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </button>
+  </form>
+</div>
+<div class="hint">Every passage is verified against the source documents</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const thread = $("#thread"), scroller = $("#scroller"), q = $("#q"), send = $("#send");
+const SUGGEST = [
+  ["JPMorgan", "How did JPMorgan's full-year 2026 NII ex-Markets guidance change between the 1Q26 and 2Q26 calls, and why?"],
+  ["Microsoft", "What Azure growth did Microsoft guide to for FY27 Q2, and what did it say the guide depends on?"],
+  ["Netflix", "How fast is Netflix's advertising business growing in 2026?"],
+  ["Fact-check", "Which analyst is more bullish on Microsoft after FY27 Q1, and is their reasoning supported?"],
+];
+const STEPS = ["Searching transcripts…", "Reading management's answers…", "Cross-checking analyst notes…", "Verifying citations…"];
+let busy = false, msgId = 0;
+
+const esc = s => s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function empty(){
+  thread.innerHTML = `<section class="hero">
+    <h1>Ask your research.<br><span>Get cited answers.</span></h1>
+    <p>Answers come only from the earnings-call transcripts and analyst notes. Transcripts take precedence, and notes that disagree are flagged.</p>
+    <div class="suggest">${SUGGEST.map(([t,s]) => `<button class="chip glass" data-q="${esc(s)}"><small>${t}</small>${esc(s)}</button>`).join("")}</div>
+  </section>`;
+  thread.querySelectorAll(".chip").forEach(b => b.onclick = () => ask(b.dataset.q));
+}
+
+function fmt(text, id){
+  // escape → light markdown (bold, bullets, paragraphs) → [n] citation buttons
+  const blocks = esc(text).split(/\n{2,}/).map(b => {
+    const lines = b.split("\n");
+    if (lines.every(l => /^\s*[-•*]\s+/.test(l)))
+      return "<ul>" + lines.map(l => "<li>" + l.replace(/^\s*[-•*]\s+/, "") + "</li>").join("") + "</ul>";
+    return "<p>" + lines.join("<br>") + "</p>";
+  }).join("");
+  return blocks
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\[(\d+(?:\s*,\s*\d+)*)\]/g, (_, nums) =>
+      nums.split(/\s*,\s*/).map(n => `<button class="ref" data-m="${id}" data-n="${n}">${n}</button>`).join(""));
+}
+
+function scrollEnd(){ requestAnimationFrame(() => scroller.scrollTop = scroller.scrollHeight); }
+
+function addUser(text){
+  const el = document.createElement("div");
+  el.className = "msg user";
+  el.innerHTML = `<div class="bubble-user">${esc(text)}</div>`;
+  thread.appendChild(el); scrollEnd();
+}
+
+function addThinking(){
+  const el = document.createElement("div");
+  el.className = "msg";
+  el.innerHTML = `<div class="thinking glass"><div class="orb"></div><div class="shimmer">${STEPS[0]}</div></div>`;
+  thread.appendChild(el); scrollEnd();
+  let i = 0; const lbl = el.querySelector(".shimmer");
+  el._t = setInterval(() => { i = (i + 1) % STEPS.length; lbl.textContent = STEPS[i]; }, 2600);
+  return el;
+}
+
+function renderAnswer(holder, data){
+  clearInterval(holder._t);
+  const id = ++msgId, r = data.result, m = data.meta || {}, v = m.verify || {};
+  const insuff = !r.citations.length;
+  const cites = r.citations.map((c, i) => {
+    const note = /Notes|Microsoft Earnings -/.test(c.document);
+    return `<div class="cite" id="c${id}-${i+1}">
+      <div class="cite-top"><span class="num">${i+1}</span><span class="doc">${esc(c.document.replace(/\.pdf$/,""))}</span>
+      <span class="tag ${note ? "note" : "tx"}">${note ? "ANALYST NOTE" : "TRANSCRIPT"}</span></div>
+      <div class="passage">${esc(c.passage)}</div></div>`;
+  }).join("");
+  const kept = (v.exact||0) + (v.fuzzy||0) + (v.repaired||0);
+  holder.innerHTML = `<div class="bubble-ai glass">
+    ${insuff ? `<div class="insufficient">● Not enough information in the documents</div>` : ""}
+    <div class="answer">${fmt(r.answer, id)}</div>
+    ${cites ? `<div class="cites"><div class="cites-h">Sources</div>${cites}</div>` : ""}
+    <div class="meta">
+      ${v.raw ? `<span class="ok">✓ ${kept}/${v.raw} quotes verified</span>` : ""}
+      ${v.dropped ? `<span>${v.dropped} unverifiable quote${v.dropped>1?"s":""} removed</span>` : ""}
+      ${m.duration_ms ? `<span>${(m.duration_ms/1000).toFixed(1)}s</span>` : ""}
+      ${m.turns ? `<span>${m.turns} steps</span>` : ""}
+    </div></div>`;
+  holder.querySelectorAll(".cite").forEach(c => c.onclick = () => c.classList.toggle("open"));
+  holder.querySelectorAll(".ref").forEach(b => b.onclick = () => {
+    const c = document.getElementById(`c${b.dataset.m}-${b.dataset.n}`);
+    if (!c) return;
+    c.scrollIntoView({behavior:"smooth", block:"center"});
+    c.classList.add("open","flash"); setTimeout(() => c.classList.remove("flash"), 1400);
+  });
+}
+
+async function ask(text){
+  text = (text || "").trim();
+  if (!text || busy) return;
+  if (thread.querySelector(".hero")) thread.innerHTML = "";
+  busy = true; q.value = ""; autosize(); send.disabled = true;
+  addUser(text);
+  const holder = addThinking();
+  try {
+    const res = await fetch("/api/ask", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({question:text})});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || res.statusText);
+    renderAnswer(holder, data);
+  } catch (e) {
+    clearInterval(holder._t);
+    holder.innerHTML = `<div class="bubble-ai glass"><div class="error">Something went wrong: ${esc(String(e.message || e))}</div></div>`;
+  } finally {
+    busy = false; send.disabled = !q.value.trim(); scrollEnd(); q.focus();
+  }
+}
+
+function autosize(){ q.style.height = "auto"; q.style.height = Math.min(q.scrollHeight, 160) + "px"; }
+q.addEventListener("input", () => { autosize(); send.disabled = busy || !q.value.trim(); });
+q.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask(q.value); } });
+$("#form").onsubmit = e => { e.preventDefault(); ask(q.value); };
+$("#reset").onclick = () => { if (!busy) empty(); };
+empty();
+</script>
+</body>
+</html>

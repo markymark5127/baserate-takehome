@@ -35,6 +35,8 @@ Configuration lives in environment variables, or in `.env`, which is git-ignored
 
 `answer(question) -> {"answer": str, "citations": [{"document": str, "passage": str}]}` is in `src/answer.py`. It is synchronous, and it also works when called from inside a running event loop, such as Jupyter. `document` is the source PDF's filename. `passage` is always text copied from that document (see §5). `[n]` markers in the answer refer to the citations list. Run the evaluation with `python -m eval.run_eval --label myrun`.
 
+**Optional chat UI:** run `python -m ui.server` and open http://127.0.0.1:8000. It is a local, standard-library-only web page over the same `answer()` function, with clickable `[n]` citations and verification stats. It isn't needed for evaluation.
+
 ## 2. Requirements and assumptions
 
 What I took the brief to require:

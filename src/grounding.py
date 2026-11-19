@@ -5,8 +5,10 @@ sentences say what the quotes say. This step closes that gap:
 
 1. Split the answer into sentence-level claims, keeping each one's [n] markers.
 2. One call to a small judge model (GROUNDING_MODEL, default Haiku) labels every claim against the
-   FULL text of the cited chunks:
-     supported   -> kept; if it had no [n] marker, the supporting citation numbers are added
+   quoted passages exactly as returned to the user (not the surrounding chunk), so a claim only
+   counts as supported if the evidence the reader can see supports it:
+     supported   -> kept; if it had no [n] marker, or its markers point only at passages that don't
+                    support it, the supporting citation numbers are added
      unsupported -> removed from the answer (logged in the trace)
      no_claim    -> kept (framing such as "Here is what the documents say:")
 3. Arithmetic on cited figures (96.5 - 95 = 1.5) counts as supported; outside knowledge does not.
@@ -130,11 +132,15 @@ def _align(verdicts, claims):
     return out
 
 
+def _marks(text):
+    return {int(n) for m in MARK.findall(text) for n in re.findall(r"\d+", m)}
+
+
 async def ground(answer, passages):
-    """passages: list of (header, full chunk text), aligned with the citation numbers 1..n."""
+    """passages: list of (header, quoted passage text), aligned with the citation numbers 1..n."""
     lines, flat = split_claims(answer)
     stats = {"claims": len(flat), "supported": 0, "unsupported": 0, "no_claim": 0, "unmatched": 0,
-             "citations_added": 0}
+             "citations_added": 0, "citations_fixed": 0}
     if not flat or not passages:
         return answer, stats, []
     claims = [u for _, _, u in flat]
@@ -154,14 +160,19 @@ async def ground(answer, passages):
             removed.append({"claim": text, "reason": v.get("reason", "")})
             m = LABEL.match(text)
             lines[li][1][ui] = _Label(m.group(1)) if m else None
-        elif kind == "supported" and not MARK.search(text):
-            nums = sorted({n for n in v.get("support", []) if 1 <= n <= len(passages)})
-            if nums:
-                stats["citations_added"] += 1
-                stripped = text.rstrip()
-                end = stripped[-1] if stripped[-1:] in ".!?" else ""
-                body = stripped[:-1] if end else stripped
-                lines[li][1][ui] = f"{body} [{', '.join(map(str, nums))}]{end}"
+        elif kind == "supported":
+            support = {n for n in v.get("support", []) if 1 <= n <= len(passages)}
+            have = _marks(text)
+            if not support or (have & support):
+                continue  # already cites a supporting passage (or judge named none: leave as is)
+            nums = sorted(support)
+            stats["citations_added" if not have else "citations_fixed"] += 1
+            if have:  # markers point at the wrong passages: drop them, cite the supporting ones
+                text = re.sub(r"\s*" + MARK.pattern, "", text)
+            stripped = text.rstrip()
+            end = stripped[-1] if stripped[-1:] in ".!?" else ""
+            body = stripped[:-1] if end else stripped
+            lines[li][1][ui] = f"{body} [{', '.join(map(str, nums))}]{end}"
     out = []
     for prefix, units in lines:
         kept = [u for u in units if u is not None]

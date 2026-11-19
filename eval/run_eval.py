@@ -73,6 +73,7 @@ def score(item, res, trace):
     g = trace.get("grounding") or {}
     out["claims"], out["removed"] = g.get("claims", 0), g.get("unsupported", 0)
     out["cit_added"], out["g_error"] = g.get("citations_added", 0), g.get("error")
+    out["cit_fixed"] = g.get("citations_fixed", 0)
     rp = trace.get("repair") or {}
     out["repaired_round"] = bool(rp.get("attempted"))
     out["first_unsupported"] = len(rp.get("claims", []))
@@ -131,7 +132,7 @@ def main():
         "dropped": sum(r["dropped"] for r in ok),
         "answers_with_ungrounded_numbers": sum(bool(r["ungrounded"]) for r in ok),
         "claims_checked": sum(r["claims"] for r in ok), "claims_removed": sum(r["removed"] for r in ok),
-        "citations_added": sum(r["cit_added"] for r in ok), "grounding_errors": sum(bool(r["g_error"]) for r in ok),
+        "citations_added": sum(r["cit_added"] for r in ok), "citations_fixed": sum(r.get("cit_fixed", 0) for r in ok), "grounding_errors": sum(bool(r["g_error"]) for r in ok),
         "repair_rounds": sum(r["repaired_round"] for r in ok),
         "unsupported_before_repair": sum(r["first_unsupported"] for r in ok),
         "avg_sec": mean("sec"), "total_cost_usd": round(sum(r["cost"] for r in ok), 3),

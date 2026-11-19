@@ -22,6 +22,8 @@ claude setup-token              # (on any machine with Claude Code) -> paste int
 
 python -m src.ingest            # optional: builds data/processed/ (~1-2 min). answer() also builds it on first call.
 python -m src.answer "How did Netflix's India business perform in 3Q26?"
+
+python -m ui.server             # optional: chat UI at http://127.0.0.1:8000 (see below)
 ```
 
 Configuration lives in environment variables, or in `.env`, which is git-ignored:
@@ -67,7 +69,7 @@ Assumptions:
 - **Microsoft's fiscal calendar:** FY26 Q4 is Apr–Jun 2026 and FY27 Q1 is Jul–Sep 2026. The "FY27 Q2 guide" was given on the FY27 Q1 call. These mappings are in the manifest, the `list_documents` tool and the prompt, so "calendar Q3 2026 revenue" resolves correctly.
 - "Adjusted" for JPM means excluding significant items, which is how management uses the term.
 - For an ambiguous question ("what EPS did the company report?"), the system answers for each company and says so, rather than asking a follow-up question. The function is single-turn.
-- Latency of about 5–15 seconds per question is acceptable for an analyst tool. Cost per question is about $0.06 with Sonnet.
+- Latency of about 5–15 seconds per question is acceptable for an analyst tool. Cost per question is about $0.06–0.08 with Sonnet (the repair round adds a little when it runs).
 
 ## 3. System design
 
@@ -240,7 +242,7 @@ Three fixes followed: give the judge each passage's provenance header, explicitl
 - *Figures not in the cited passages:* a note's 3.6% claim when that note passage wasn't cited.
 - *Figures from documents never cited:* earlier-quarter EPS figures.
 
-The one cost is C15, the deliberately ambiguous EPS question. Netflix's EPS isn't in its transcript (it sits in the S&P cover table, which I skip), and removing that bullet's unsupported sentence also removed its "Netflix" label. That is why facts scores 0.99. In run5, 94 previously uncited true sentences got citations, so answers are both stricter and better cited.
+The one cost is C15, the deliberately ambiguous EPS question. Netflix's EPS isn't in its transcript (it sits in the S&P cover table, which I was still skipping at that point), and removing that bullet's unsupported sentence also removed its "Netflix" label. That is why facts scores 0.99. In run5, 94 previously uncited true sentences got citations, so answers are both stricter and better cited.
 
 **Closing the last gap (run6).** Three changes fixed C15 at the root rather than in the scorer:
 1. *The data gap:* the S&P cover table is ingested, so Netflix's $0.87 EPS against $0.82 consensus is now transcript data. The C15 answer cites it directly.
@@ -259,6 +261,7 @@ src/config.py      env/.env config (token, model, top_k)      src/tools.py     M
 src/ingest.py      PDF → clean speaker turns (+ rebuild CLI)   src/prompts.py   system prompt + output schema
 src/chunking.py    turn/sentence-aware chunks                  src/verify.py    citation verification
 src/index.py       BM25 + embeddings + RRF + role weighting    src/answer.py    answer(question) entry point
+src/grounding.py   claim-level grounding judge + repair
 data/manifest.json document metadata (hand-written)            eval/            gold set, runner, results
 ui/server.py       optional local chat UI server (stdlib)      ui/index.html    chat page (single file)
 ```
@@ -268,5 +271,5 @@ ui/server.py       optional local chat UI server (stdlib)      ui/index.html    
 2. **A note-audit mode.** Proactively reconcile every claim in a note against its transcript and produce a "your note says X, management said Y" report. This finding is the most valuable thing the system produces, and it fits Baserate's "accurate feedback on your research" goal directly.
 3. **A larger, harder test set**, including adversarial and multi-hop questions, questions spanning all three companies, and some written by someone other than me, plus an LLM judge calibrated against my hand labels, a long-context baseline for comparison, and runs on Haiku to compare cost and quality.
 4. **Structured extraction** of guidance and KPI tables (metric, period, value, speaker) into a small table the agent can query. This makes comparison questions ("how did guidance change") exact and cheaper.
-5. **Scaling the retrieval layer** for real users with thousands of documents: a persistent vector store, incremental ingestion, a cross-encoder reranker, document-level access control, and including the S&P cover table (where Netflix's reported EPS lives, currently skipped as page furniture).
+5. **Scaling the retrieval layer** for real users with thousands of documents: a persistent vector store, incremental ingestion, a cross-encoder reranker, and document-level access control.
 6. **Latency and cost:** cache retrieval per question, stream partial answers, and add a "fast path" for simple lookups.

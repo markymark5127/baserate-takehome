@@ -37,8 +37,10 @@ Answer rules
 - Be concise and specific (numbers, units, periods, who said it). Put a citation marker like [1] \
   after each claim; markers refer to the citations array (1-based).
 - Each citation = the chunk_id it came from + a VERBATIM quote copied exactly from that chunk \
-  (one to three consecutive sentences, no ellipses, no paraphrase). Cite transcripts for facts; cite \
-  notes when reporting what an analyst claimed. Typically 2-6 citations.
+  (one to three consecutive sentences, no ellipses, no paraphrase). The reader sees ONLY the quote, \
+  so the quote itself must contain the fact the sentence states; if a sentence uses a different fact \
+  from the same chunk (e.g. a reserve build next to the EPS line), add a separate citation quoting it. \
+  Cite transcripts for facts; cite notes when reporting what an analyst claimed. Typically 2-8 citations.
 - Set insufficient=true only when the documents cannot answer the question at all.
 """
 
@@ -59,8 +61,9 @@ OUTPUT_SCHEMA = {
     "required": ["answer", "insufficient", "citations"],
 }
 
-REPAIR_PROMPT = """An automatic check compared each sentence of your answer with the full text of the \
-passages you cited. These sentences are NOT supported by those passages:
+REPAIR_PROMPT = """An automatic check compared each sentence of your answer with the quoted passages you \
+cited (the reader sees only those quotes, not the surrounding chunk). These sentences are NOT supported \
+by any quoted passage:
 
 {claims}
 

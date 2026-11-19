@@ -85,7 +85,9 @@ def _check(raw):
     grounding, removed = {"skipped": True}, []
     if config.GROUNDING and citations:
         try:
-            passages = [(passage_header(c), c["text"]) for c in chunks]
+            # Judge against the quoted passage the reader actually sees, not the whole chunk:
+            # a claim is only grounded if its citation's visible text supports it.
+            passages = [(passage_header(ch), cit["passage"]) for cit, ch in zip(citations, chunks)]
             text, grounding, removed = _run_sync(ground(text, passages))
         except Exception as e:  # fail open: quotes are already verified
             grounding = {"error": f"{type(e).__name__}: {e}"}

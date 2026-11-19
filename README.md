@@ -35,7 +35,20 @@ Configuration lives in environment variables, or in `.env`, which is git-ignored
 
 `answer(question) -> {"answer": str, "citations": [{"document": str, "passage": str}]}` is in `src/answer.py`. It is synchronous, and it also works when called from inside a running event loop, such as Jupyter. `document` is the source PDF's filename. `passage` is always text copied from that document (see §5). `[n]` markers in the answer refer to the citations list. Run the evaluation with `python -m eval.run_eval --label myrun`.
 
-**Optional chat UI:** run `python -m ui.server` and open http://127.0.0.1:8000. It is a local, standard-library-only web page over the same `answer()` function, with clickable `[n]` citations and verification stats. It isn't needed for evaluation.
+
+### Optional: chat UI
+
+```bash
+source .venv/bin/activate
+python -m ui.server             # then open http://127.0.0.1:8000   (PORT=8080 to change the port)
+```
+
+This is a local web page for asking questions interactively. It calls the same `answer()` function and adds no dependencies, because the server uses only the Python standard library (`ui/server.py` plus a single page, `ui/index.html`). It isn't needed for evaluation.
+- **Answers:** each answer has clickable `[n]` markers that scroll to and highlight the cited source.
+- **Sources:** each source card shows the document, a TRANSCRIPT or ANALYST NOTE badge, and the exact verified passage. Click a card to expand it.
+- **Footer:** each answer shows "n/n quotes verified", latency and the number of agent steps. When the documents can't answer, the card shows a "Not enough information" badge.
+- **Clear:** the ↻ Clear button resets the conversation. Each question is answered independently, as `answer()` is single-turn.
+- **Look:** a frosted-glass design that follows the system light or dark mode and works at phone width.
 
 ## 2. Requirements and assumptions
 
@@ -106,6 +119,20 @@ The system prompt sets these research rules:
 - check the question's premise;
 - handle Microsoft's fiscal calendar;
 - answer partially, or abstain explicitly, when the evidence is missing.
+
+### How conflicting information is handled
+The corpus has two kinds of conflict: **a note against a transcript** (a factual error in a note), and **one note against another** (the analysts disagree, or one of them is wrong). The system handles them at three layers:
+1. **Prompt policy (`src/prompts.py`).**
+   - *Hierarchy:* transcripts are authoritative and notes are claims.
+   - *Cross-checking:* on every factual question the agent also searches the notes for the same company and period (`doc_type="analyst_note"`), even when the transcript has already answered it.
+   - *Reporting:* when a note disagrees, the answer gives the transcript's figure, names the analyst and states what the note claimed. Example: "card NCO guidance was ~3.2% [1]; Sally Barton's note says ~3.6%, which the transcript contradicts [2]".
+   - *Note-only claims:* a claim found only in a note is attributed to that analyst ("according to Joe Smith's note…") and marked as unconfirmed.
+   - *Opinions:* "my take: positive" is labelled as opinion, never stated as fact.
+   - *Disagreeing notes:* when two notes disagree with each other, the transcript settles it, and the answer says which note matches it, if either.
+2. **Retrieval.** Search filters by document type, so the agent can deliberately pull the transcript passage that confirms or refutes a note. Analyst *questions* rank lower, so a claim repeated inside an analyst's question isn't mistaken for management confirming it.
+3. **Citations.** Both sides of a conflict are cited, the transcript passage and the note passage, and the sources show which is which (by filename, and with a badge in the UI). The reader can therefore see the disagreement in the original text instead of trusting the model's summary.
+
+Results: in the evaluation, 13 of the 25 questions are planted note conflicts. After the prompt fix, the flag rate went from 0.71 to 1.00 in both final runs (see §5). On held-out questions the system also caught two errors I hadn't planted. Joe Smith wrote that Microsoft "has already started issuing debt", while Amy Hood said it hasn't tapped the debt markets yet. Sally Barton called AI token costs "a meaningful line item", while Barnum called them "a trivial number".
 
 ### Citation verification (`src/verify.py`)
 The model returns a chunk ID and a quote it says is verbatim. It doesn't get to decide what counts as a citation. Each quote goes through these checks in order:
@@ -181,6 +208,7 @@ src/ingest.py      PDF → clean speaker turns (+ rebuild CLI)   src/prompts.py 
 src/chunking.py    turn/sentence-aware chunks                  src/verify.py    citation verification
 src/index.py       BM25 + embeddings + RRF + role weighting    src/answer.py    answer(question) entry point
 data/manifest.json document metadata (hand-written)            eval/            gold set, runner, results
+ui/server.py       optional local chat UI server (stdlib)      ui/index.html    chat page (single file)
 ```
 
 ## 7. With another week

@@ -13,7 +13,7 @@ answer("What were JPMorgan's adjusted EPS and ROTCE in 2Q26?")
 Requirements: Python 3.10 to 3.13 (tested on 3.12) and internet access on first run, to download a 130 MB embedding model. **Node.js and a separate Claude Code install are not needed**, because `claude-agent-sdk` ships its own Claude Code CLI binary.
 
 ```bash
-git clone <repo> && cd baserate-takehome
+git clone https://github.com/markymark5127/baserate-takehome.git && cd baserate-takehome
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
@@ -69,7 +69,7 @@ Assumptions:
 - **Microsoft's fiscal calendar:** FY26 Q4 is Apr–Jun 2026 and FY27 Q1 is Jul–Sep 2026. The "FY27 Q2 guide" was given on the FY27 Q1 call. These mappings are in the manifest, the `list_documents` tool and the prompt, so "calendar Q3 2026 revenue" resolves correctly.
 - "Adjusted" for JPM means excluding significant items, which is how management uses the term.
 - For an ambiguous question ("what EPS did the company report?"), the system answers for each company and says so, rather than asking a follow-up question. The function is single-turn.
-- Latency of about 5–15 seconds per question is acceptable for an analyst tool. Cost per question is about $0.06–0.08 with Sonnet (the repair round adds a little when it runs).
+- Latency of about 5–15 seconds for most questions (13 s on average in the final run; multi-period and ambiguous questions take up to about 30 s) is acceptable for an analyst tool. Cost per question is about $0.06–0.08 with Sonnet (the repair round adds a little when it runs).
 
 ## 3. System design
 
@@ -153,12 +153,12 @@ The model returns a chunk ID and a quote it says is verbatim. It doesn't get to 
 ### Claim-level grounding (`src/grounding.py`)
 Verified quotes prove that the *sources* are real, but not that the *answer* says what they say. A real quote can still be attached to an overstated claim. So, after verification:
 1. **Split into claims.** The answer is split into sentence-level claims, keeping each claim's `[n]` markers and bullet structure.
-2. **One judge call.** A single call to a small model (Haiku, configurable) labels every claim as `supported`, `unsupported` or `no_claim`. The judge sees the **full text** of every cited chunk, a **provenance header** for each one (document, company, fiscal period and calendar quarter, speaker, title, section), and the whole answer for context. Simple arithmetic on cited figures counts as support. Outside knowledge does not.
+2. **One judge call.** A single call to a small model (Haiku, configurable) labels every claim as `supported`, `unsupported` or `no_claim`. The judge sees the **quoted passage exactly as returned to the user** (not the surrounding chunk, so a claim only passes if the evidence the reader can see supports it), a **provenance header** for each one (document, company, fiscal period and calendar quarter, speaker, title, section), and the whole answer for context. Simple arithmetic on cited figures counts as support. Outside knowledge does not.
 3. **Repair round.** If any claim is unsupported, the agent's session is resumed once with the list of those sentences and the judge's reasons. The agent can search again and cite the claim, correct it, or drop it. The revised answer then goes through quote verification and grounding again from scratch.
 4. **Removal, as a last resort.**
    - Claims still `unsupported` after the repair round are **removed** and logged with the judge's reason.
    - If a removed sentence started with a bold label (for example "**Netflix (3Q26):**"), the label stays and reads "Not confirmed in the cited documents", so the answer still shows the topic was addressed.
-   - `supported` claims that had no `[n]` marker **get the supporting citation added**, which fixes the under-citation found in run2 and run3.
+   - `supported` claims that had no `[n]` marker **get the supporting citation added**, which fixes the under-citation found in run2 and run3. Supported claims whose markers point only at passages that don't support them are re-pointed to the ones that do.
    - When no factual content survives, the answer becomes the standard "not enough information" response.
 5. **Safeguards.** Removal is destructive, so it is guarded:
    - *Matching:* verdicts are matched to claims by the claim's echoed opening words, not just by index.
@@ -193,7 +193,7 @@ There are 25 questions: the 8 samples plus 17 of my own, each labelled with a ca
 | abstention | 2 | China tariffs (only distractor mentions); Apple |
 | not in docs | 1 | Netflix 2027 guidance (deferred to January) |
 | ambiguous | 1 | "What EPS did the company report?" |
-| fiscal mapping | 1 | "Microsoft revenue in July–September 2026" |
+| fiscal mapping | 1 | "Microsoft's Azure growth in the July–September 2026 quarter" |
 
 ### Scoring (`eval/run_eval.py`, deterministic, no LLM judge)
 - **facts:** share of `must_include` key facts present in the answer (alternatives allowed, e.g. `decrease|declin`).
@@ -211,15 +211,16 @@ There are 25 questions: the 8 samples plus 17 of my own, each labelled with a ca
 | run3 | repeat of run2 (nondeterminism) | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 99 | 7 / 25 | 7.6 | $1.16 |
 | run4 | + claim grounding v1 | 0.99 | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 106 | 4 / 25 | 8.8 | $1.22 |
 | run5 | + grounding v2 (provenance headers, justified removals) | 0.99 | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 100 | 9 / 25 | 11.1 | $0.88 |
-
 | run6 | + S&P cover table, label-preserving removal, repair round | **1.00** | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 104 | 7 / 25 | 9.8 | $2.00 |
 | run7 | repeat of run6 (nondeterminism) | **1.00** | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 113 | 6 / 25 | 10.1 | $1.46 |
+| run8 | judge sees the quoted passage, not the whole chunk (final code) | **1.00** | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 135 | 2 / 25 | 13.0 | $2.09 |
 
 Grounding detail:
 - **run4** checked 224 claims and removed 45, adding 75 citations.
 - **run5** checked 220 claims and removed 9, adding 94 citations, with 0 judge errors.
 - **run6** checked 193 claims and added 71 citations. 6 claims were flagged as unsupported, the repair round fixed all 6, and **0 were removed**.
 - **run7** checked 226 claims and added 92 citations. 9 claims in 5 answers were flagged, the repair round fixed all 9, and **0 were removed**.
+- **run8** checked 220 claims, added 77 citations and re-pointed 1. 43 claims were flagged across 16 answers, the repair round fixed 36, and **7 were removed**.
 
 Full per-question tables and every answer are in `eval/results/`.
 
@@ -251,9 +252,15 @@ The one cost is C15, the deliberately ambiguous EPS question. Netflix's EPS isn'
 
 In run6 and run7, every flagged claim was fixed in the repair round: 15 flagged, 15 fixed, 0 removed. Both runs score 1.00 on every metric. The trade-off is cost, about $0.08 per question on average, up from about $0.05, and the flagged answers take a few seconds longer.
 
+**Judging the visible quote (run8, the submitted code).** Up to run7 the judge saw the whole cited chunk, so a claim could pass on text the reader never sees. In run8 it sees only the quoted passage returned in `citations`, which matches the brief's requirement that the cited passage supports the claim. Scores stayed at 1.00 on every metric, and answers with ungrounded numbers fell from 6–7 to 2. The judge is much stricter: 43 claims were flagged (against 9–15 before), 36 were fixed in the repair round and 7 were removed. I read all 7:
+- *Real problems (3):* a phrase in quotation marks ("no changes in release strategies") that is in no cited passage; a FY27 Q2 period label the passage doesn't state; a claim tying the $50B to back leverage when the cited quote doesn't mention it.
+- *True but not in the quote (4):* a segment name ("Devices and consumer") and film details (title variants, the Fincher film) that sit in the chunk but outside the quoted sentence.
+
+So the cost of this strictness is that some true context is lost, and a removal can leave a sentence that pointed to the removed one reading awkwardly ("Another specialty release…"), or a bold label marked "Not confirmed in the cited documents". The answers stay correct; they are sometimes less complete. I chose strictness, because for this use case an unsupported sentence is worse than a missing one. Run8 is also slower (13 s average) because more answers take the repair round.
+
 **Held-out check.** To guard against tuning the prompt to my own test set, I ran 8 new questions after the prompt was fixed (`eval/results/holdout_run.txt`). Examples: succession timing, AI's effect on expenses, M&A, "which analyst is more bullish and is it supported", and subscriber adds (which correctly abstained). All 8 were correct and grounded, with 47 out of 47 quotes verified exactly. The system also found **an error I hadn't planted:** Joe Smith's note says Microsoft "has already started issuing debt", but Amy Hood said they "haven't yet … tap[ped]" the debt markets. It also flagged Sally Barton's claim that AI token costs are "a meaningful line item" as contradicted by Barnum ("a trivial number").
 
-**Limits of this evaluation.** It uses 25 questions that I wrote, scored by string matching. Key-fact matching can pass an answer that contains the right number in the wrong context, which is why I also read the answers. Note-flag matching is a proxy. The test set is small enough that one question equals 4 points.
+**Limits of this evaluation.** It uses 25 questions that I wrote, scored by string matching. Key-fact matching can pass an answer that contains the right number in the wrong context, which is why I also read the answers. Note-flag matching is a proxy. The test set is small enough that one question equals 4 points. Removal works sentence by sentence, so it doesn't yet remove later sentences that depend on a removed one.
 
 ## 6. Project layout
 ```

@@ -6,12 +6,12 @@
 <title>Earnings Desk</title>
 <style>
 :root{
-  --bg:#eef1f8; --ink:#0b1020; --ink-2:rgba(11,16,32,.62); --ink-3:rgba(11,16,32,.42);
+  --bg:#eef1f6; --ink:#0b1020; --ink-2:rgba(11,16,32,.62); --ink-3:rgba(11,16,32,.42);
   --glass:rgba(255,255,255,.42); --glass-strong:rgba(255,255,255,.62); --stroke:rgba(255,255,255,.75);
   --edge:rgba(11,16,32,.08); --shadow:0 10px 40px -12px rgba(30,40,90,.28), 0 2px 6px rgba(30,40,90,.06);
-  --accent:#2f6bff; --accent-2:#8a5cff; --user-a:#3d7bff; --user-b:#7a5cff;
+  --accent:#2456d3; --accent-2:#3a6ee8; --user-a:#2a5bd7; --user-b:#1f47b0;
   --note:#c2410c; --note-bg:rgba(251,146,60,.16); --tx:#0f766e; --tx-bg:rgba(45,212,191,.16);
-  --blob1:#7aa7ff; --blob2:#c59bff; --blob3:#7fe3d0; --blob4:#ffb3c7;
+  --blob1:#b9c9e6; --blob2:#cfd6e6; --blob3:#b3cfe0; --blob4:#d9dce6;
 }
 @media (prefers-color-scheme: dark){
   :root{
@@ -19,24 +19,24 @@
     --glass:rgba(28,32,48,.42); --glass-strong:rgba(36,40,60,.62); --stroke:rgba(255,255,255,.14);
     --edge:rgba(255,255,255,.06); --shadow:0 14px 50px -14px rgba(0,0,0,.7), 0 2px 8px rgba(0,0,0,.3);
     --note:#fdba74; --note-bg:rgba(251,146,60,.14); --tx:#5eead4; --tx-bg:rgba(45,212,191,.12);
-    --blob1:#2747a8; --blob2:#5a2ea6; --blob3:#0f6b62; --blob4:#7a2448;
+    --blob1:#1c2c52; --blob2:#232b45; --blob3:#15323d; --blob4:#262338;
   }
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{
   font:15px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Roboto,system-ui,sans-serif;
-  color:var(--ink); background:var(--bg); -webkit-font-smoothing:antialiased; overflow:hidden;
+  color:var(--ink); background:var(--bg); -webkit-font-smoothing:antialiased; overflow:hidden; font-variant-numeric:tabular-nums;
 }
 /* ---------- living background ---------- */
 .bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-.blob{position:absolute;width:52vmax;height:52vmax;border-radius:50%;filter:blur(70px);opacity:.75;mix-blend-mode:normal;animation:drift 26s ease-in-out infinite alternate}
+.blob{position:absolute;width:52vmax;height:52vmax;border-radius:50%;filter:blur(80px);opacity:.8;mix-blend-mode:normal;animation:drift 40s ease-in-out infinite alternate}
 .b1{background:var(--blob1);top:-18vmax;left:-12vmax}
 .b2{background:var(--blob2);top:-10vmax;right:-18vmax;animation-delay:-6s;animation-duration:31s}
 .b3{background:var(--blob3);bottom:-22vmax;left:10vmax;animation-delay:-12s;animation-duration:34s}
 .b4{background:var(--blob4);bottom:-20vmax;right:-8vmax;animation-delay:-3s;animation-duration:29s;opacity:.55}
 @keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(6vmax,4vmax) scale(1.08)}100%{transform:translate(-4vmax,7vmax) scale(.95)}}
-.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.035;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 /* ---------- glass primitive ---------- */
 .glass{
@@ -58,23 +58,24 @@ header{
   display:flex;align-items:center;gap:12px;
 }
 .logo{width:30px;height:30px;border-radius:10px;flex:none;display:grid;place-items:center;
-  background:linear-gradient(140deg,var(--accent),var(--accent-2));box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 4px 14px -4px var(--accent)}
+  background:linear-gradient(160deg,#2b5fd9,#1a3f9e);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 8px -2px rgba(26,63,158,.5)}
 .logo svg{width:17px;height:17px}
 .title{font-weight:650;letter-spacing:-.01em}
 .sub{font-size:12.5px;color:var(--ink-2)}
 .grow{flex:1}
 .pill{font-size:12px;color:var(--ink-2);padding:6px 11px;border-radius:999px;background:var(--glass-strong);border:1px solid var(--stroke);display:flex;align-items:center;gap:6px;white-space:nowrap}
 .dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.18)}
-.iconbtn{border:0;background:transparent;color:var(--ink-2);cursor:pointer;border-radius:999px;padding:7px;display:grid;place-items:center}
-.iconbtn:hover{background:var(--glass-strong);color:var(--ink)}
+.clearbtn{border:1px solid var(--stroke);background:var(--glass-strong);color:var(--ink-2);cursor:pointer;border-radius:999px;padding:6px 12px 6px 10px;display:flex;align-items:center;gap:6px;font:inherit;font-size:12.5px;font-weight:550;transition:color .15s,background .15s}
+.clearbtn:hover{color:var(--ink)}.clearbtn:disabled{opacity:.4;cursor:default}
+.clearbtn.spin svg{animation:spin .6s cubic-bezier(.4,0,.2,1) reverse}
 
 main{flex:1;width:100%;overflow-y:auto;scroll-behavior:smooth;padding:18px 16px 150px}
 .thread{width:min(820px,100%);margin:0 auto;display:flex;flex-direction:column;gap:18px}
 
 /* empty state */
 .hero{margin:9vh auto 0;text-align:center;max-width:620px;animation:rise .6s cubic-bezier(.2,.8,.2,1)}
-.hero h1{font-size:clamp(30px,5vw,44px);line-height:1.08;letter-spacing:-.035em;margin:0 0 10px;font-weight:700}
-.hero h1 span{background:linear-gradient(100deg,var(--accent),var(--accent-2) 60%,#d65cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero h1{font-size:clamp(28px,4.4vw,40px);line-height:1.12;letter-spacing:-.03em;margin:0 0 12px;font-weight:650}
+.hero h1 span{color:var(--ink-2)}
 .hero p{color:var(--ink-2);margin:0 auto 26px;max-width:500px}
 .suggest{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;text-align:left}
 .chip{border-radius:20px;padding:13px 15px;cursor:pointer;font:inherit;color:var(--ink);font-size:14px;line-height:1.4;transition:transform .2s,background .2s}
@@ -87,7 +88,7 @@ main{flex:1;width:100%;overflow-y:auto;scroll-behavior:smooth;padding:18px 16px 
 .bubble-user{
   max-width:78%;padding:11px 16px;border-radius:22px 22px 6px 22px;color:#fff;
   background:linear-gradient(135deg,var(--user-a),var(--user-b));
-  box-shadow:0 10px 30px -12px var(--user-a), inset 0 1px 0 rgba(255,255,255,.35);
+  box-shadow:0 6px 18px -10px rgba(31,71,176,.6), inset 0 1px 0 rgba(255,255,255,.25);
   white-space:pre-wrap;word-wrap:break-word
 }
 .bubble-ai{width:100%;border-radius:26px 26px 26px 8px;padding:18px 20px 14px}
@@ -107,7 +108,7 @@ main{flex:1;width:100%;overflow-y:auto;scroll-behavior:smooth;padding:18px 16px 
 .cite:hover{transform:translateY(-1px)}
 .cite.flash{box-shadow:0 0 0 2px var(--accent),0 10px 30px -10px var(--accent)}
 .cite-top{display:flex;align-items:center;gap:8px;font-size:12.5px;min-width:0}
-.num{flex:none;width:20px;height:20px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+.num{flex:none;width:20px;height:20px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:var(--accent)}
 .doc{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .tag{flex:none;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;letter-spacing:.02em}
 .tag.tx{color:var(--tx);background:var(--tx-bg)}.tag.note{color:var(--note);background:var(--note-bg)}
@@ -121,7 +122,7 @@ main{flex:1;width:100%;overflow-y:auto;scroll-behavior:smooth;padding:18px 16px 
 
 /* thinking */
 .thinking{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:22px 22px 22px 8px;width:fit-content}
-.orb{width:22px;height:22px;border-radius:50%;background:conic-gradient(from 0deg,var(--accent),var(--accent-2),#d65cff,var(--blob3),var(--accent));animation:spin 1.4s linear infinite;
+.orb{width:22px;height:22px;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 25%,var(--accent) 100%);animation:spin 1.4s linear infinite;
   mask:radial-gradient(circle,transparent 5px,#000 6px);-webkit-mask:radial-gradient(circle,transparent 5px,#000 6px)}
 .shimmer{font-size:14px;background:linear-gradient(90deg,var(--ink-3) 0%,var(--ink) 50%,var(--ink-3) 100%);background-size:200% 100%;
   -webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 2.2s linear infinite}
@@ -137,8 +138,8 @@ main{flex:1;width:100%;overflow-y:auto;scroll-behavior:smooth;padding:18px 16px 
 textarea{flex:1;resize:none;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:15.5px;line-height:1.45;padding:10px 0;max-height:160px}
 textarea::placeholder{color:var(--ink-3)}
 .send{flex:none;width:42px;height:42px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;color:#fff;
-  background:linear-gradient(140deg,var(--accent),var(--accent-2));box-shadow:0 8px 22px -8px var(--accent),inset 0 1px 0 rgba(255,255,255,.45);transition:transform .15s,opacity .15s}
-.send:hover{transform:scale(1.06)}.send:disabled{opacity:.35;cursor:default;transform:none}
+  background:linear-gradient(160deg,#2b5fd9,#1f47b0);box-shadow:0 4px 12px -6px rgba(31,71,176,.7),inset 0 1px 0 rgba(255,255,255,.3);transition:transform .15s,opacity .15s}
+.send:hover{transform:scale(1.04)}.send:disabled{opacity:.35;cursor:default;transform:none}
 .hint{position:fixed;bottom:4px;left:0;right:0;text-align:center;font-size:11px;color:var(--ink-3);z-index:3;pointer-events:none}
 
 @media (max-width:640px){
@@ -159,8 +160,9 @@ textarea::placeholder{color:var(--ink-3)}
     <div><div class="title">Earnings Desk</div><div class="sub">JPMorgan · Microsoft · Netflix — transcripts &amp; analyst notes</div></div>
     <div class="grow"></div>
     <div class="pill"><span class="dot"></span><span class="lbl">Grounded answers only</span></div>
-    <button class="iconbtn" id="reset" title="New chat" aria-label="New chat">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    <button class="clearbtn" id="reset" title="Clear conversation" aria-label="Clear conversation">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      <span class="lbl">Clear</span>
     </button>
   </header>
 
@@ -193,7 +195,7 @@ const esc = s => s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",
 
 function empty(){
   thread.innerHTML = `<section class="hero">
-    <h1>Ask your research.<br><span>Get cited answers.</span></h1>
+    <h1>Research Q&amp;A<br><span>Answers sourced from calls and notes.</span></h1>
     <p>Answers come only from the earnings-call transcripts and analyst notes. Transcripts take precedence, and notes that disagree are flagged.</p>
     <div class="suggest">${SUGGEST.map(([t,s]) => `<button class="chip glass" data-q="${esc(s)}"><small>${t}</small>${esc(s)}</button>`).join("")}</div>
   </section>`;
@@ -268,7 +270,7 @@ async function ask(text){
   text = (text || "").trim();
   if (!text || busy) return;
   if (thread.querySelector(".hero")) thread.innerHTML = "";
-  busy = true; q.value = ""; autosize(); send.disabled = true;
+  busy = true; q.value = ""; autosize(); send.disabled = true; reset.disabled = true;
   addUser(text);
   const holder = addThinking();
   try {
@@ -280,7 +282,7 @@ async function ask(text){
     clearInterval(holder._t);
     holder.innerHTML = `<div class="bubble-ai glass"><div class="error">Something went wrong: ${esc(String(e.message || e))}</div></div>`;
   } finally {
-    busy = false; send.disabled = !q.value.trim(); scrollEnd(); q.focus();
+    busy = false; reset.disabled = false; send.disabled = !q.value.trim(); scrollEnd(); q.focus();
   }
 }
 
@@ -288,7 +290,12 @@ function autosize(){ q.style.height = "auto"; q.style.height = Math.min(q.scroll
 q.addEventListener("input", () => { autosize(); send.disabled = busy || !q.value.trim(); });
 q.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask(q.value); } });
 $("#form").onsubmit = e => { e.preventDefault(); ask(q.value); };
-$("#reset").onclick = () => { if (!busy) empty(); };
+const reset = $("#reset");
+reset.onclick = () => {
+  if (busy) return;
+  reset.classList.remove("spin"); void reset.offsetWidth; reset.classList.add("spin");
+  empty(); q.focus();
+};
 empty();
 </script>
 </body>

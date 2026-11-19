@@ -46,7 +46,8 @@ def _locate(quote, text):
 
 def verify(raw_citations):
     ix = get_index()
-    kept, stats, mapping = [], {"raw": len(raw_citations), "exact": 0, "fuzzy": 0, "repaired": 0, "dropped": 0}, {}
+    kept, kept_chunks, mapping = [], [], {}
+    stats = {"raw": len(raw_citations), "exact": 0, "fuzzy": 0, "repaired": 0, "dropped": 0}
     dropped = []
     for n, c in enumerate(raw_citations, 1):
         quote = _clean_quote(c.get("quote", ""))
@@ -71,8 +72,9 @@ def verify(raw_citations):
             mapping[n] = kept.index(entry) + 1
             continue
         kept.append(entry)
+        kept_chunks.append(chunk)
         mapping[n] = len(kept)
-    return kept, mapping, stats, dropped
+    return kept, mapping, stats, dropped, kept_chunks
 
 
 def renumber(answer, mapping):

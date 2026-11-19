@@ -70,6 +70,9 @@ def score(item, res, trace):
     out["cit_valid"] = round((v["exact"] + v["fuzzy"]) / v["raw"], 2) if v["raw"] else None
     out["repaired"], out["dropped"] = v["repaired"], v["dropped"]
     out["ungrounded"] = ungrounded_numbers(res["answer"], res["citations"])
+    g = trace.get("grounding") or {}
+    out["claims"], out["removed"] = g.get("claims", 0), g.get("unsupported", 0)
+    out["cit_added"], out["g_error"] = g.get("citations_added", 0), g.get("error")
     out["sec"] = round(trace["duration_ms"] / 1000, 1)
     out["cost"] = round(trace["cost_usd"] or 0, 4)
     return out
@@ -106,7 +109,8 @@ def main():
             s = score(item, res, trace)
             rows.append(s)
             raw.append({"id": item["id"], "question": item["question"], "expected": item["expected"],
-                        "result": res, "verify": trace["verify"], "dropped": trace["dropped"]})
+                        "result": res, "verify": trace["verify"], "dropped": trace["dropped"],
+                        "grounding": trace.get("grounding"), "removed_claims": trace.get("removed_claims")})
             print(json.dumps(s), flush=True)
     rows.sort(key=lambda r: r["id"])
 
@@ -122,18 +126,21 @@ def main():
         "citations_total": sum(r["n_cit"] for r in ok), "repaired": sum(r["repaired"] for r in ok),
         "dropped": sum(r["dropped"] for r in ok),
         "answers_with_ungrounded_numbers": sum(bool(r["ungrounded"]) for r in ok),
+        "claims_checked": sum(r["claims"] for r in ok), "claims_removed": sum(r["removed"] for r in ok),
+        "citations_added": sum(r["cit_added"] for r in ok), "grounding_errors": sum(bool(r["g_error"]) for r in ok),
         "avg_sec": mean("sec"), "total_cost_usd": round(sum(r["cost"] for r in ok), 3),
     }
     lines = [f"# Eval run `{args.label}`", "", "```json", json.dumps(summary, indent=1), "```", "",
-             "| id | cat | facts | abstain_ok | src_recall | note_flag | cites | raw_valid | repaired | dropped | ungrounded | sec |",
-             "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+             "| id | cat | facts | abstain_ok | src_recall | note_flag | cites | raw_valid | repaired | dropped | claims | removed | cit_added | ungrounded | sec |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         if "error" in r:
             lines.append(f"| {r['id']} | {r['category']} | ERROR: {r['error'][:80]} |||||||||| |")
             continue
         lines.append("| " + " | ".join(str(r[k]) if r[k] is not None else "-" for k in
                      ("id", "category", "facts", "abstain_ok", "src_recall", "note_flag", "n_cit", "cit_valid",
-                      "repaired", "dropped")) + f" | {' '.join(r['ungrounded']) or '-'} | {r['sec']} |")
+                      "repaired", "dropped", "claims", "removed", "cit_added"))
+                     + f" | {' '.join(r['ungrounded']) or '-'} | {r['sec']} |")
     (outdir / f"{args.label}.md").write_text("\n".join(lines) + "\n")
     with open(outdir / f"{args.label}.answers.jsonl", "w") as f:
         for r in sorted(raw, key=lambda x: x["id"]):

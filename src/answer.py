@@ -16,6 +16,7 @@ from . import config
 from .index import get_index
 from .prompts import INSUFFICIENT, OUTPUT_SCHEMA, SYSTEM_PROMPT
 from .tools import ALLOWED, SERVER, SERVER_NAME
+from .grounding import ground, passage_header
 from .verify import renumber, verify
 
 
@@ -79,16 +80,24 @@ def _run_sync(coro):
 def answer_with_trace(question: str) -> tuple[dict, dict]:
     get_index()  # build/load index before the agent starts (first run builds it)
     raw, meta = _run_sync(_run_agent(question))
-    citations, mapping, stats, dropped = verify(raw.get("citations") or [])
+    citations, mapping, stats, dropped, chunks = verify(raw.get("citations") or [])
     text = renumber(raw.get("answer", ""), mapping)
+    grounding, removed = {"skipped": True}, []
+    if config.GROUNDING and citations:
+        try:
+            passages = [(passage_header(c), c["text"]) for c in chunks]
+            text, grounding, removed = _run_sync(ground(text, passages))
+        except Exception as e:  # fail open: quotes are already verified
+            grounding = {"error": f"{type(e).__name__}: {e}"}
     if raw.get("insufficient"):
         result = {"answer": text or INSUFFICIENT, "citations": citations}
-    elif not citations:
+    elif not citations or not text.strip():
         # The model claimed an answer but nothing it cited could be found in the sources.
         result = {"answer": INSUFFICIENT + " (No verifiable supporting passage was found.)", "citations": []}
     else:
         result = {"answer": text, "citations": citations}
-    trace = {"raw": raw, "verify": stats, "dropped": dropped, **meta}
+    trace = {"raw": raw, "verify": stats, "dropped": dropped, "grounding": grounding,
+             "removed_claims": removed, **meta}
     return result, trace
 
 
@@ -101,4 +110,4 @@ if __name__ == "__main__":
     res, tr = answer_with_trace(q)
     print(json.dumps(res, indent=2, ensure_ascii=False))
     if os.getenv("TRACE"):
-        print(json.dumps({k: tr[k] for k in ("verify", "dropped", "turns", "cost_usd", "duration_ms")}, indent=2), file=sys.stderr)
+        print(json.dumps({k: tr[k] for k in ("verify", "dropped", "grounding", "removed_claims", "turns", "cost_usd", "duration_ms")}, indent=2), file=sys.stderr)

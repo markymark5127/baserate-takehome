@@ -41,7 +41,7 @@ class Handler(BaseHTTPRequestHandler):
             if not question:
                 return self._send(400, b'{"error":"empty question"}')
             result, trace = answer_with_trace(question)
-            meta = {k: trace.get(k) for k in ("verify", "turns", "cost_usd", "duration_ms")}
+            meta = {k: trace.get(k) for k in ("verify", "grounding", "turns", "cost_usd", "duration_ms")}
             self._send(200, json.dumps({"result": result, "meta": meta}).encode())
         except Exception as e:
             traceback.print_exc()

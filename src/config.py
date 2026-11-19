@@ -14,6 +14,8 @@ MANIFEST = ROOT / "data" / "manifest.json"
 MODEL = os.getenv("MODEL", "claude-sonnet-5-5")
 TOP_K = int(os.getenv("TOP_K", "8"))
 MAX_TURNS = int(os.getenv("MAX_TURNS", "12"))
+GROUNDING = os.getenv("GROUNDING", "on").lower() not in ("0", "off", "false", "no")
+GROUNDING_MODEL = os.getenv("GROUNDING_MODEL", "claude-haiku-5-5")
 EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 # Token is read by the bundled Claude Code CLI from the environment; we only pass it through.
 OAUTH_TOKEN = os.getenv("CLAUDE_CODE_OAUTH_TOKEN") or None

@@ -32,6 +32,8 @@ Configuration lives in environment variables, or in `.env`, which is git-ignored
 | `MODEL` | `claude-sonnet-5-5` | any Claude model id |
 | `TOP_K` | `8` | passages returned per search call |
 | `MAX_TURNS` | `12` | maximum number of agent turns per question |
+| `GROUNDING` | `on` | claim-level grounding check (§3); `off` skips it, saving about 3 seconds |
+| `GROUNDING_MODEL` | `claude-haiku-5-5` | the small model that judges each claim |
 
 `answer(question) -> {"answer": str, "citations": [{"document": str, "passage": str}]}` is in `src/answer.py`. It is synchronous, and it also works when called from inside a running event loop, such as Jupyter. `document` is the source PDF's filename. `passage` is always text copied from that document (see §5). `[n]` markers in the answer refer to the citations list. Run the evaluation with `python -m eval.run_eval --label myrun`.
 
@@ -46,7 +48,7 @@ python -m ui.server             # then open http://127.0.0.1:8000   (PORT=8080 t
 This is a local web page for asking questions interactively. It calls the same `answer()` function and adds no dependencies, because the server uses only the Python standard library (`ui/server.py` plus a single page, `ui/index.html`). It isn't needed for evaluation.
 - **Answers:** each answer has clickable `[n]` markers that scroll to and highlight the cited source.
 - **Sources:** each source card shows the document, a TRANSCRIPT or ANALYST NOTE badge, and the exact verified passage. Click a card to expand it.
-- **Footer:** each answer shows "n/n quotes verified", latency and the number of agent steps. When the documents can't answer, the card shows a "Not enough information" badge.
+- **Footer:** each answer shows "n/n quotes verified", "n/n claims supported", latency and the number of agent steps. When the documents can't answer, the card shows a "Not enough information" badge.
 - **Clear:** the ↻ Clear button resets the conversation. Each question is answered independently, as `answer()` is single-turn.
 - **Look:** a frosted-glass design that follows the system light or dark mode and works at phone width.
 
@@ -143,6 +145,21 @@ The model returns a chunk ID and a quote it says is verbatim. It doesn't get to 
 
 `[n]` markers are renumbered to match the surviving citations. If the model gave an answer but **no** citation survived, the answer is replaced by the standard "documents do not contain enough information" response. As a result, every passage returned is guaranteed to be real text from the named document.
 
+### Claim-level grounding (`src/grounding.py`)
+Verified quotes prove that the *sources* are real, but not that the *answer* says what they say. A real quote can still be attached to an overstated claim. So, after verification:
+1. **Split into claims.** The answer is split into sentence-level claims, keeping each claim's `[n]` markers and bullet structure.
+2. **One judge call.** A single call to a small model (Haiku, configurable) labels every claim as `supported`, `unsupported` or `no_claim`. The judge sees the **full text** of every cited chunk, a **provenance header** for each one (document, company, fiscal period and calendar quarter, speaker, title, section), and the whole answer for context. Simple arithmetic on cited figures counts as support. Outside knowledge does not.
+3. **Repair.**
+   - `unsupported` claims are **removed** and logged with the judge's reason.
+   - `supported` claims that had no `[n]` marker **get the supporting citation added**, which fixes the under-citation found in run2 and run3.
+   - When no factual content survives, the answer becomes the standard "not enough information" response.
+4. **Safeguards.** Removal is destructive, so it is guarded:
+   - *Matching:* verdicts are matched to claims by the claim's echoed opening words, not just by index.
+   - *Justification:* a removal must name the missing or contradicted fact; unexplained verdicts keep the claim.
+   - *Failures:* if the judge call fails, the answer is returned unchanged (fail open, because the quotes are already verified).
+
+The cost is about 3 seconds and roughly $0.004 per question.
+
 ## 4. Alternatives considered
 
 | option | decision and reason |
@@ -185,6 +202,10 @@ There are 25 questions: the 8 samples plus 17 of my own, each labelled with a ca
 | run1 | baseline prompt | 0.989 | 1.00 | 1.00 | **0.71** | 1.00 | 0 / 72 | (metric bug) | 6.5 | $1.27 |
 | run2 | prompt v2 | **1.00** | 1.00 | 1.00 | **1.00** | 1.00 | 0 / 99 | 7 / 25 | 8.1 | $1.53 |
 | run3 | repeat of run2 (nondeterminism) | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 99 | 7 / 25 | 7.6 | $1.16 |
+| run4 | + claim grounding v1 | 0.99 | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 106 | 4 / 25 | 8.8 | $1.22 |
+| run5 | + grounding v2 (provenance headers, justified removals) | 0.99 | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 100 | 9 / 25 | 11.1 | $0.88 |
+
+Grounding detail: **run4** checked 224 claims and removed 45, adding 75 citations. **run5** checked 220 claims and removed 9, adding 94 citations, with 0 judge errors.
 
 Full per-question tables and every answer are in `eval/results/`.
 
@@ -195,7 +216,19 @@ Full per-question tables and every answer are in `eval/results/`.
 - *Dates:* "Oct 28".
 - *True but loosely cited:* operating income +21% is in the cited chunk but outside the quoted sentence; Netflix's 13–14% full-year guide is real but uncited.
 
-So the remaining weakness is **under-citation**, not invention (see §7).
+So the remaining weakness was **under-citation**, not invention, which led to claim-level grounding.
+
+**Building the grounding check (run4 → run5).** I read every one of the 45 sentences that run4 removed. Most were **true**:
+- The judge saw only passage text, so "CFO Jeremy Barnum said…" failed because the passage doesn't contain his name.
+- "FY27 Q1 (Jul–Sep 2026)" failed on the calendar mapping.
+- "The transcript is authoritative, so the note is wrong" failed as a policy statement.
+
+Three fixes followed: give the judge each passage's provenance header, explicitly allow the transcript-over-notes rule, and require a stated reason for every removal. In run5, **all 9 removals were real problems**:
+- *Overgeneralisations:* "both notes give the $95B → $96.5B change" when Sally Barton's note gives only the new level; "both notes describe the 45% guide" when Joe Smith's doesn't mention it.
+- *Figures not in the cited passages:* a note's 3.6% claim when that note passage wasn't cited.
+- *Figures from documents never cited:* earlier-quarter EPS figures.
+
+The one cost is C15, the deliberately ambiguous EPS question. Netflix's EPS isn't in its transcript (it sits in the S&P cover table, which I skip), and removing that bullet's unsupported sentence also removed its "Netflix" label. That is why facts scores 0.99. In run5, 94 previously uncited true sentences got citations, so answers are both stricter and better cited.
 
 **Held-out check.** To guard against tuning the prompt to my own test set, I ran 8 new questions after the prompt was fixed (`eval/results/holdout_run.txt`). Examples: succession timing, AI's effect on expenses, M&A, "which analyst is more bullish and is it supported", and subscriber adds (which correctly abstained). All 8 were correct and grounded, with 47 out of 47 quotes verified exactly. The system also found **an error I hadn't planted:** Joe Smith's note says Microsoft "has already started issuing debt", but Amy Hood said they "haven't yet … tap[ped]" the debt markets. It also flagged Sally Barton's claim that AI token costs are "a meaningful line item" as contradicted by Barnum ("a trivial number").
 
@@ -212,7 +245,7 @@ ui/server.py       optional local chat UI server (stdlib)      ui/index.html    
 ```
 
 ## 7. With another week
-1. **Claim-level grounding.** Split the answer into atomic claims and check that each one is entailed by its cited passage: numbers deterministically, everything else with a cheap Haiku judge. Repair or remove unsupported sentences. This targets the one weakness the evaluation found, under-cited true claims, and catches the dangerous case of a real quote supporting a wrong claim.
+1. **Better claim repair.** Grounding currently *removes* unsupported sentences. Better would be to send them back to the agent once ("support or drop these claims"), so a true claim with a missing citation is fixed rather than lost (the C15 case). I'd also calibrate the judge against a hand-labelled set of claims, and add a deterministic number check alongside it.
 2. **A note-audit mode.** Proactively reconcile every claim in a note against its transcript and produce a "your note says X, management said Y" report. This finding is the most valuable thing the system produces, and it fits Baserate's "accurate feedback on your research" goal directly.
 3. **A larger, harder test set**, including adversarial and multi-hop questions, questions spanning all three companies, and some written by someone other than me, plus an LLM judge calibrated against my hand labels, a long-context baseline for comparison, and runs on Haiku to compare cost and quality.
 4. **Structured extraction** of guidance and KPI tables (metric, period, value, speaker) into a small table the agent can query. This makes comparison questions ("how did guidance change") exact and cheaper.

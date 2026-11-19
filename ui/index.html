@@ -246,7 +246,8 @@ function renderAnswer(holder, data){
       <span class="tag ${note ? "note" : "tx"}">${note ? "ANALYST NOTE" : "TRANSCRIPT"}</span></div>
       <div class="passage">${esc(c.passage)}</div></div>`;
   }).join("");
-  const kept = (v.exact||0) + (v.fuzzy||0) + (v.repaired||0), g = m.grounding || {};
+  const kept = (v.exact||0) + (v.fuzzy||0) + (v.repaired||0), g = m.grounding || {}, rp = m.repair || {};
+  const fixed = rp.attempted ? (rp.claims || []).length - (rp.still_unsupported ?? (rp.claims || []).length) : 0;
   holder.innerHTML = `<div class="bubble-ai glass">
     ${insuff ? `<div class="insufficient">● Not enough information in the documents</div>` : ""}
     <div class="answer">${fmt(r.answer, id)}</div>
@@ -255,6 +256,7 @@ function renderAnswer(holder, data){
       ${v.raw ? `<span class="ok">✓ ${kept}/${v.raw} quotes verified</span>` : ""}
       ${v.dropped ? `<span>${v.dropped} unverifiable quote${v.dropped>1?"s":""} removed</span>` : ""}
       ${g.claims ? `<span class="ok">✓ ${g.claims - (g.unsupported||0)}/${g.claims} claims supported</span>` : ""}
+      ${fixed > 0 ? `<span>${fixed} claim${fixed>1?"s":""} fixed on review</span>` : ""}
       ${g.unsupported ? `<span>${g.unsupported} unsupported claim${g.unsupported>1?"s":""} removed</span>` : ""}
       ${m.duration_ms ? `<span>${(m.duration_ms/1000).toFixed(1)}s</span>` : ""}
       ${m.turns ? `<span>${m.turns} steps</span>` : ""}

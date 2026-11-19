@@ -24,6 +24,12 @@ from . import config
 MARK = re.compile(r"\[(\d+(?:\s*,\s*\d+)*)\]")
 SENT = re.compile(r"(?<=[.!?])\s+(?=[A-Z*\"“(])")
 BULLET = re.compile(r"^(\s*(?:[-•*]|\d+\.)\s+)")
+LABEL = re.compile(r"^(\*\*[^*]{1,80}\*\*:?)\s*")
+NOT_CONFIRMED = "Not confirmed in the cited documents."
+
+
+class _Label(str):
+    """What remains of a removed sentence that began with a bold label (e.g. '**Netflix (3Q26):**')."""
 
 JUDGE_PROMPT = """You check whether each claim in an analyst-facing answer is supported by source passages.
 For each claim return a verdict:
@@ -146,7 +152,8 @@ async def ground(answer, passages):
             stats["supported"] += 1
         if kind == "unsupported":
             removed.append({"claim": text, "reason": v.get("reason", "")})
-            lines[li][1][ui] = None
+            m = LABEL.match(text)
+            lines[li][1][ui] = _Label(m.group(1)) if m else None
         elif kind == "supported" and not MARK.search(text):
             nums = sorted({n for n in v.get("support", []) if 1 <= n <= len(passages)})
             if nums:
@@ -160,6 +167,8 @@ async def ground(answer, passages):
         kept = [u for u in units if u is not None]
         if units and not kept:
             continue  # every sentence on this line was removed
+        if kept and all(isinstance(u, _Label) for u in kept):
+            kept.append(NOT_CONFIRMED)  # keep the structure: the topic was addressed, but nothing held up
         out.append(prefix + " ".join(kept) if kept else "")
     text = re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip()
     return text, stats, removed

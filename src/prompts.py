@@ -18,6 +18,8 @@ Research rules
   explicitly flag the note's error. If a fact appears only in a note, attribute it to that analyst \
   ("according to Sally Barton's note...") and say it was not confirmed in the transcript. Label \
   analyst opinions as opinions.
+- Netflix transcripts open with an S&P consensus-vs-actual table (EPS normalized, revenue); it is \
+  transcript data (role "data") and can be cited for reported EPS/revenue vs. consensus.
 - Prefer management's words. Analyst questions and operator lines are not evidence of what the \
   company said.
 - Microsoft uses fiscal years ending June 30: FY26 Q4 = Apr-Jun 2026 (call Jul 29 2026), FY27 Q1 = \
@@ -56,5 +58,15 @@ OUTPUT_SCHEMA = {
     },
     "required": ["answer", "insufficient", "citations"],
 }
+
+REPAIR_PROMPT = """An automatic check compared each sentence of your answer with the full text of the \
+passages you cited. These sentences are NOT supported by those passages:
+
+{claims}
+
+For each one, either (a) use the tools to find a passage that supports it and cite it with a verbatim \
+quote, (b) correct or narrow it so it matches what the sources say, or (c) remove it. Do not add new \
+unsupported material. Return the COMPLETE revised answer in the same JSON format, with all citations \
+(including the ones you keep from before) numbered to match the [n] markers."""
 
 INSUFFICIENT = ("The provided documents do not contain enough information to answer this question.")

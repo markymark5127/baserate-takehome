@@ -12,7 +12,7 @@ from rank_bm25 import BM25Okapi
 from .config import EMBED_MODEL, PROCESSED_DIR
 
 RRF_K = 60
-ROLE_WEIGHT = {"management": 1.0, "analyst_note": 1.0, "ir": 0.8, "analyst": 0.7, "operator": 0.3}
+ROLE_WEIGHT = {"data": 1.0, "management": 1.0, "analyst_note": 1.0, "ir": 0.8, "analyst": 0.7, "operator": 0.3}
 STOP = set("the a an and or of to in on for with at by from is are was were be been it its this that as "
            "what did does do how which who why when about their they we our you your".split())
 

@@ -85,10 +85,24 @@ def role_for(speaker, title, company):
     return "management"
 
 
+def cover_table(lines):
+    """S&P transcripts open with a consensus-vs-actual table (EPS normalized, revenue). It is real data
+    (e.g. Netflix's reported EPS is only stated here), so keep it as one passage, text verbatim."""
+    start = next((i for i, ln in enumerate(lines) if "Market Intelligence Estimates" in ln), None)
+    if start is None:
+        return []
+    end = next((i for i in range(start, len(lines)) if lines[i].strip() in ("Contents", "Table of Contents")),
+               min(start + 30, len(lines)))
+    return [{"speaker": "S&P Global Market Intelligence", "role": "data", "section": "cover",
+             "title": "Consensus estimates vs. actuals table from the transcript cover page. In the "
+                      "'EPS NORMALIZED' history rows the columns are: quarter, consensus, actual, surprise %.",
+             "lines": lines[start:end]}]
+
+
 def parse_transcript(path, company):
     raw = pdf_lines(path)
     lines = [ln for ln in raw if not any(j.search(ln) for j in JUNK)]
-    turns, cur, section = [], None, "prepared_remarks"
+    turns, cur, section = cover_table(lines), None, "prepared_remarks"
     started = company == "Microsoft"  # MSFT has no cover page / table of contents
     prev_dots = False
     i = 0
@@ -146,7 +160,7 @@ def parse_transcript(path, company):
         paras = join_lines(t.pop("lines"))
         if not paras:
             continue
-        t["role"] = role_for(t["speaker"], t["title"], company)
+        t["role"] = t.get("role") or role_for(t["speaker"], t["title"], company)
         t["paragraphs"] = paras
         out.append(t)
     return out

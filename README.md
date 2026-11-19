@@ -34,6 +34,7 @@ Configuration lives in environment variables, or in `.env`, which is git-ignored
 | `MAX_TURNS` | `12` | maximum number of agent turns per question |
 | `GROUNDING` | `on` | claim-level grounding check (§3); `off` skips it, saving about 3 seconds |
 | `GROUNDING_MODEL` | `claude-haiku-5-5` | the small model that judges each claim |
+| `REPAIR` | `on` | one repair round for unsupported claims before any are removed (§3) |
 
 `answer(question) -> {"answer": str, "citations": [{"document": str, "passage": str}]}` is in `src/answer.py`. It is synchronous, and it also works when called from inside a running event loop, such as Jupyter. `document` is the source PDF's filename. `passage` is always text copied from that document (see §5). `[n]` markers in the answer refer to the citations list. Run the evaluation with `python -m eval.run_eval --label myrun`.
 
@@ -86,6 +87,8 @@ The three transcript sources use three different layouts:
 - **Netflix (S&P):** name and title lines, with copyright, URL and page-number lines on every page.
 
 The parser drops page furniture, removes JPM's repeated headers so that split sentences join back up, rejoins hyphenated words broken across lines, and splits the text into speaker turns. Each turn is tagged with its **section** (prepared remarks or Q&A) and a **role** (management, analyst, IR host or operator). Speakers are detected structurally (a short title-case line followed by a line containing a job title), not from hard-coded names, so other S&P- or JPM-style transcripts should parse too. The metadata (company, period, calendar quarter, document type, author, date) is in a hand-written `data/manifest.json`. With 18 files, writing it by hand is quicker and more reliable than parsing filenames, such as "MSFT … Q1", which is really FY27.
+
+The S&P cover page of each Netflix transcript holds a consensus-vs-actual table (EPS normalized, revenue). It is the only place Netflix's reported EPS appears, so it is kept as one passage with the role `data`. Its text is verbatim, and an explanation of the columns goes in the passage's title field rather than its text, so quotes from it still verify.
 
 I used `pypdf` instead of `pdftotext` or `pymupdf` because it is pure Python and needs no system packages, which matters for a clean checkout.
 
@@ -149,16 +152,18 @@ The model returns a chunk ID and a quote it says is verbatim. It doesn't get to 
 Verified quotes prove that the *sources* are real, but not that the *answer* says what they say. A real quote can still be attached to an overstated claim. So, after verification:
 1. **Split into claims.** The answer is split into sentence-level claims, keeping each claim's `[n]` markers and bullet structure.
 2. **One judge call.** A single call to a small model (Haiku, configurable) labels every claim as `supported`, `unsupported` or `no_claim`. The judge sees the **full text** of every cited chunk, a **provenance header** for each one (document, company, fiscal period and calendar quarter, speaker, title, section), and the whole answer for context. Simple arithmetic on cited figures counts as support. Outside knowledge does not.
-3. **Repair.**
-   - `unsupported` claims are **removed** and logged with the judge's reason.
+3. **Repair round.** If any claim is unsupported, the agent's session is resumed once with the list of those sentences and the judge's reasons. The agent can search again and cite the claim, correct it, or drop it. The revised answer then goes through quote verification and grounding again from scratch.
+4. **Removal, as a last resort.**
+   - Claims still `unsupported` after the repair round are **removed** and logged with the judge's reason.
+   - If a removed sentence started with a bold label (for example "**Netflix (3Q26):**"), the label stays and reads "Not confirmed in the cited documents", so the answer still shows the topic was addressed.
    - `supported` claims that had no `[n]` marker **get the supporting citation added**, which fixes the under-citation found in run2 and run3.
    - When no factual content survives, the answer becomes the standard "not enough information" response.
-4. **Safeguards.** Removal is destructive, so it is guarded:
+5. **Safeguards.** Removal is destructive, so it is guarded:
    - *Matching:* verdicts are matched to claims by the claim's echoed opening words, not just by index.
    - *Justification:* a removal must name the missing or contradicted fact; unexplained verdicts keep the claim.
-   - *Failures:* if the judge call fails, the answer is returned unchanged (fail open, because the quotes are already verified).
+   - *Failures:* if the judge call fails, the answer is returned unchanged. If the repair round fails, the first grounded answer is kept. Both fail open, because the quotes are already verified.
 
-The cost is about 3 seconds and roughly $0.004 per question.
+Grounding costs about 3 seconds and roughly $0.004 per question. The repair round runs only when something is flagged (6 of 25 answers in run6) and adds a few seconds to those answers.
 
 ## 4. Alternatives considered
 
@@ -205,7 +210,14 @@ There are 25 questions: the 8 samples plus 17 of my own, each labelled with a ca
 | run4 | + claim grounding v1 | 0.99 | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 106 | 4 / 25 | 8.8 | $1.22 |
 | run5 | + grounding v2 (provenance headers, justified removals) | 0.99 | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 100 | 9 / 25 | 11.1 | $0.88 |
 
-Grounding detail: **run4** checked 224 claims and removed 45, adding 75 citations. **run5** checked 220 claims and removed 9, adding 94 citations, with 0 judge errors.
+| run6 | + S&P cover table, label-preserving removal, repair round | **1.00** | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 104 | 7 / 25 | 9.8 | $2.00 |
+| run7 | repeat of run6 (nondeterminism) | **1.00** | 1.00 | 1.00 | 1.00 | 1.00 | 0 / 113 | 6 / 25 | 10.1 | $1.46 |
+
+Grounding detail:
+- **run4** checked 224 claims and removed 45, adding 75 citations.
+- **run5** checked 220 claims and removed 9, adding 94 citations, with 0 judge errors.
+- **run6** checked 193 claims and added 71 citations. 6 claims were flagged as unsupported, the repair round fixed all 6, and **0 were removed**.
+- **run7** checked 226 claims and added 92 citations. 9 claims in 5 answers were flagged, the repair round fixed all 9, and **0 were removed**.
 
 Full per-question tables and every answer are in `eval/results/`.
 
@@ -230,6 +242,13 @@ Three fixes followed: give the judge each passage's provenance header, explicitl
 
 The one cost is C15, the deliberately ambiguous EPS question. Netflix's EPS isn't in its transcript (it sits in the S&P cover table, which I skip), and removing that bullet's unsupported sentence also removed its "Netflix" label. That is why facts scores 0.99. In run5, 94 previously uncited true sentences got citations, so answers are both stricter and better cited.
 
+**Closing the last gap (run6).** Three changes fixed C15 at the root rather than in the scorer:
+1. *The data gap:* the S&P cover table is ingested, so Netflix's $0.87 EPS against $0.82 consensus is now transcript data. The C15 answer cites it directly.
+2. *Removal damage:* removing a sentence keeps its bold label.
+3. *Wrong removals:* the agent gets one repair round before anything is removed.
+
+In run6 and run7, every flagged claim was fixed in the repair round: 15 flagged, 15 fixed, 0 removed. Both runs score 1.00 on every metric. The trade-off is cost, about $0.08 per question on average, up from about $0.05, and the flagged answers take a few seconds longer.
+
 **Held-out check.** To guard against tuning the prompt to my own test set, I ran 8 new questions after the prompt was fixed (`eval/results/holdout_run.txt`). Examples: succession timing, AI's effect on expenses, M&A, "which analyst is more bullish and is it supported", and subscriber adds (which correctly abstained). All 8 were correct and grounded, with 47 out of 47 quotes verified exactly. The system also found **an error I hadn't planted:** Joe Smith's note says Microsoft "has already started issuing debt", but Amy Hood said they "haven't yet … tap[ped]" the debt markets. It also flagged Sally Barton's claim that AI token costs are "a meaningful line item" as contradicted by Barnum ("a trivial number").
 
 **Limits of this evaluation.** It uses 25 questions that I wrote, scored by string matching. Key-fact matching can pass an answer that contains the right number in the wrong context, which is why I also read the answers. Note-flag matching is a proxy. The test set is small enough that one question equals 4 points.
@@ -245,7 +264,7 @@ ui/server.py       optional local chat UI server (stdlib)      ui/index.html    
 ```
 
 ## 7. With another week
-1. **Better claim repair.** Grounding currently *removes* unsupported sentences. Better would be to send them back to the agent once ("support or drop these claims"), so a true claim with a missing citation is fixed rather than lost (the C15 case). I'd also calibrate the judge against a hand-labelled set of claims, and add a deterministic number check alongside it.
+1. **Calibrate the grounding judge.** Hand-label a few hundred claims, measure the judge's false-removal and miss rates, and add a deterministic number check alongside it. The repair round currently hides judge mistakes, which is good for users but makes the judge itself harder to evaluate.
 2. **A note-audit mode.** Proactively reconcile every claim in a note against its transcript and produce a "your note says X, management said Y" report. This finding is the most valuable thing the system produces, and it fits Baserate's "accurate feedback on your research" goal directly.
 3. **A larger, harder test set**, including adversarial and multi-hop questions, questions spanning all three companies, and some written by someone other than me, plus an LLM judge calibrated against my hand labels, a long-context baseline for comparison, and runs on Haiku to compare cost and quality.
 4. **Structured extraction** of guidance and KPI tables (metric, period, value, speaker) into a small table the agent can query. This makes comparison questions ("how did guidance change") exact and cheaper.

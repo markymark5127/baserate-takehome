@@ -73,6 +73,9 @@ def score(item, res, trace):
     g = trace.get("grounding") or {}
     out["claims"], out["removed"] = g.get("claims", 0), g.get("unsupported", 0)
     out["cit_added"], out["g_error"] = g.get("citations_added", 0), g.get("error")
+    rp = trace.get("repair") or {}
+    out["repaired_round"] = bool(rp.get("attempted"))
+    out["first_unsupported"] = len(rp.get("claims", []))
     out["sec"] = round(trace["duration_ms"] / 1000, 1)
     out["cost"] = round(trace["cost_usd"] or 0, 4)
     return out
@@ -110,7 +113,8 @@ def main():
             rows.append(s)
             raw.append({"id": item["id"], "question": item["question"], "expected": item["expected"],
                         "result": res, "verify": trace["verify"], "dropped": trace["dropped"],
-                        "grounding": trace.get("grounding"), "removed_claims": trace.get("removed_claims")})
+                        "grounding": trace.get("grounding"), "removed_claims": trace.get("removed_claims"),
+                        "repair": trace.get("repair")})
             print(json.dumps(s), flush=True)
     rows.sort(key=lambda r: r["id"])
 
@@ -128,6 +132,8 @@ def main():
         "answers_with_ungrounded_numbers": sum(bool(r["ungrounded"]) for r in ok),
         "claims_checked": sum(r["claims"] for r in ok), "claims_removed": sum(r["removed"] for r in ok),
         "citations_added": sum(r["cit_added"] for r in ok), "grounding_errors": sum(bool(r["g_error"]) for r in ok),
+        "repair_rounds": sum(r["repaired_round"] for r in ok),
+        "unsupported_before_repair": sum(r["first_unsupported"] for r in ok),
         "avg_sec": mean("sec"), "total_cost_usd": round(sum(r["cost"] for r in ok), 3),
     }
     lines = [f"# Eval run `{args.label}`", "", "```json", json.dumps(summary, indent=1), "```", "",
